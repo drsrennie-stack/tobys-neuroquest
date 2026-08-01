@@ -1,0 +1,1866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuroQuest · Anatomy Mastery Challenge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#080b14;
+  --surface:#111827;
+  --surface2:#161f33;
+  --line:#232f4a;
+  --text:#e9edf7;
+  --muted:#8b93ac;
+  --axon:#49e0d8;      /* electric teal, action potential */
+  --axon-dim:#1e5c58;
+  --dendrite:#f5a623;  /* amber, XP / energy */
+  --correct:#5fe6a0;
+  --incorrect:#ff6b7a;
+  --dok1:#49e0d8;
+  --dok2:#f5a623;
+  --dok3:#ff6b7a;
+  --radius:14px;
+  --font-display:'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body:'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-mono:'IBM Plex Mono', ui-monospace, monospace;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{height:100%;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font-body);
+  overflow-x:hidden;
+  min-height:100vh;
+}
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important;}
+}
+
+/* ---------- Accessibility helpers ---------- */
+.visually-hidden{position:absolute !important; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0;}
+.skip-link{
+  position:absolute; left:10px; top:-70px; z-index:100;
+  background:var(--axon); color:#052321; padding:10px 16px; border-radius:0 0 10px 10px;
+  font-family:var(--font-body); font-weight:700; text-decoration:none; transition:top .15s ease;
+}
+.skip-link:focus{top:0;}
+:focus-visible{outline:2px solid var(--dendrite); outline-offset:2px;}
+
+/* ---------- Ambient neuron network background ---------- */
+#netbg{position:fixed; inset:0; z-index:0; opacity:0.55;}
+
+/* ---------- App shell ---------- */
+#app{position:relative; z-index:1; min-height:100vh; display:flex; flex-direction:column;}
+
+.topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 20px; background:rgba(8,11,20,0.75); backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line); position:sticky; top:0; z-index:10;
+}
+.brand{display:flex; align-items:center; gap:10px; font-family:var(--font-display); font-weight:800; font-size:1.15rem; letter-spacing:0.01em;}
+.brand .spark{width:10px; height:10px; border-radius:50%; background:var(--axon); box-shadow:0 0 12px 3px var(--axon); animation:pulse 1.6s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1; transform:scale(1);}50%{opacity:0.5; transform:scale(0.7);}}
+
+.navbtns{display:flex; gap:8px;}
+.navbtn{
+  background:var(--surface2); border:1px solid var(--line); color:var(--text);
+  font-family:var(--font-body); font-size:0.8rem; font-weight:600;
+  padding:8px 12px; border-radius:10px; cursor:pointer; transition:all .15s ease;
+}
+.navbtn:hover{border-color:var(--axon); color:var(--axon);}
+.navbtn:focus-visible{outline:2px solid var(--axon); outline-offset:2px;}
+
+main{flex:1; display:flex; flex-direction:column; align-items:center; padding:28px 16px 60px; width:100%;}
+.screen{width:100%; max-width:760px; animation:fadein .35s ease;}
+.screen:focus{outline:none;}
+@keyframes fadein{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);}}
+.hidden{display:none !important;}
+
+h1.hero{font-family:var(--font-display); font-weight:800; font-size:clamp(2rem,6vw,3.2rem); line-height:1.05; letter-spacing:-0.01em;}
+.tagline{color:var(--muted); margin-top:8px; font-size:1.02rem; max-width:52ch;}
+
+/* ---------- Main menu ---------- */
+.menu-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:32px;}
+@media(max-width:520px){.menu-grid{grid-template-columns:1fr;}}
+.menu-card{
+  background:linear-gradient(160deg, var(--surface), var(--surface2));
+  border:1px solid var(--line); border-radius:var(--radius); padding:20px;
+  cursor:pointer; transition:transform .18s ease, border-color .18s ease; text-align:left;
+  width:100%; font-family:inherit; color:var(--text); display:block;
+}
+.menu-card:hover{transform:translateY(-3px); border-color:var(--axon);}
+.menu-card:focus-visible{outline:2px solid var(--dendrite); outline-offset:2px; border-color:var(--axon);}
+.menu-card .icon{font-family:var(--font-mono); font-size:0.7rem; color:var(--axon); letter-spacing:0.1em; text-transform:uppercase;}
+.menu-card h3{font-family:var(--font-display); font-size:1.3rem; margin-top:6px; font-weight:700;}
+.menu-card p{color:var(--muted); font-size:0.85rem; margin-top:4px;}
+
+/* ---------- Nodes-of-Ranvier progress bar (signature element) ---------- */
+.myelin-track{
+  display:flex; gap:3px; width:100%; height:14px; margin:14px 0;
+}
+.myelin-seg{flex:1; background:var(--surface2); border:1px solid var(--line); border-radius:3px; position:relative; overflow:hidden;}
+.myelin-seg.filled{background:var(--axon); border-color:var(--axon); box-shadow:0 0 8px var(--axon);}
+.myelin-seg.node{width:2px; flex:none; background:transparent; border:none;}
+
+/* ---------- Stat pills ---------- */
+.statbar{display:flex; flex-wrap:wrap; gap:10px; margin:18px 0;}
+.pill{
+  font-family:var(--font-mono); font-size:0.78rem; background:var(--surface); border:1px solid var(--line);
+  border-radius:20px; padding:6px 14px; display:flex; align-items:center; gap:6px;
+}
+.pill b{color:var(--dendrite); font-weight:600;}
+.pill.streak b{color:var(--axon);}
+
+/* ---------- Level tabs ---------- */
+.leveltabs{display:flex; gap:8px; margin-top:24px;}
+.leveltab{
+  flex:1; padding:14px 10px; text-align:center; border-radius:12px; cursor:pointer;
+  border:1px solid var(--line); background:var(--surface); transition:all .15s ease;
+  font-family:inherit; color:var(--text);
+}
+.leveltab:focus-visible{outline:2px solid var(--dendrite); outline-offset:2px;}
+.leveltab .dok{font-family:var(--font-mono); font-size:0.68rem; letter-spacing:0.08em; text-transform:uppercase; opacity:0.8;}
+.leveltab .name{font-family:var(--font-display); font-weight:700; font-size:1.05rem; margin-top:2px;}
+.leveltab[data-lvl="1"].active{border-color:var(--dok1); box-shadow:0 0 0 1px var(--dok1);}
+.leveltab[data-lvl="2"].active{border-color:var(--dok2); box-shadow:0 0 0 1px var(--dok2);}
+.leveltab[data-lvl="3"].active{border-color:var(--dok3); box-shadow:0 0 0 1px var(--dok3);}
+.leveltab .dok{color:var(--muted);}
+.leveltab[data-lvl="1"] .dok{color:var(--dok1);}
+.leveltab[data-lvl="2"] .dok{color:var(--dok2);}
+.leveltab[data-lvl="3"] .dok{color:var(--dok3);}
+
+.btn{
+  font-family:var(--font-body); font-weight:600; font-size:0.95rem; padding:12px 22px;
+  border-radius:12px; border:1px solid var(--axon); background:transparent; color:var(--axon);
+  cursor:pointer; transition:all .15s ease;
+}
+.btn:hover{background:var(--axon); color:#052321;}
+.btn.primary{background:var(--axon); color:#052321;}
+.btn.primary:hover{filter:brightness(1.12);}
+.btn:focus-visible{outline:2px solid var(--dendrite); outline-offset:2px;}
+.btn.ghost{border-color:var(--line); color:var(--muted);}
+.btn.ghost:hover{border-color:var(--text); color:var(--text); background:transparent;}
+.btn:disabled{opacity:0.4; cursor:not-allowed;}
+.actionrow{display:flex; gap:10px; margin-top:22px; flex-wrap:wrap;}
+
+/* ---------- segmented control (session length) ---------- */
+.seg{display:inline-flex; border:1px solid var(--line); border-radius:10px; overflow:hidden; margin-top:6px;}
+.seg button{
+  background:var(--surface); color:var(--muted); border:none; font-family:var(--font-mono);
+  font-size:0.78rem; padding:8px 14px; cursor:pointer; transition:all .15s ease;
+}
+.seg button + button{border-left:1px solid var(--line);}
+.seg button.on{background:var(--axon); color:#052321; font-weight:600;}
+.seg button:focus-visible{outline:2px solid var(--dendrite); outline-offset:-2px;}
+.fieldlbl{font-family:var(--font-mono); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin-top:18px;}
+
+/* ---------- Question card ---------- */
+.qmeta{display:flex; justify-content:space-between; align-items:center; gap:8px; font-family:var(--font-mono); font-size:0.72rem; color:var(--muted); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.06em; flex-wrap:wrap;}
+.qtag{padding:3px 9px; border-radius:20px; border:1px solid var(--line);}
+.qcard{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:24px;}
+.qtext{font-family:var(--font-display); font-size:1.25rem; line-height:1.5; font-weight:700;}
+.qtext:focus{outline:none;}
+.choices{display:grid; gap:10px; margin-top:22px;}
+.choice{
+  text-align:left; padding:14px 16px; border-radius:12px; border:1px solid var(--line);
+  background:var(--surface2); color:var(--text); cursor:pointer; font-size:0.96rem;
+  display:flex; gap:10px; align-items:flex-start; transition:all .15s ease; font-family:inherit;
+}
+.choice:hover:not(.locked){border-color:var(--axon); transform:translateX(2px);}
+.choice:focus-visible{outline:2px solid var(--axon); outline-offset:2px;}
+.choice .letter{font-family:var(--font-mono); color:var(--axon); font-weight:600;}
+.choice.correct{border-color:var(--correct); background:rgba(95,230,160,0.12);}
+.choice.incorrect{border-color:var(--incorrect); background:rgba(255,107,122,0.12);}
+.choice.locked{cursor:default;}
+.choice.dim{opacity:0.5;}
+
+.timerwrap{margin-top:14px; height:5px; background:var(--surface2); border-radius:4px; overflow:hidden;}
+.timerbar{height:100%; background:var(--dendrite); width:100%; transition:width 1s linear;}
+
+/* ---------- Explanation panel ---------- */
+.explain{margin-top:20px; background:var(--surface2); border:1px solid var(--line); border-radius:var(--radius); padding:20px; display:none;}
+.explain.show{display:block; animation:fadein .3s ease;}
+.explain h4{font-family:var(--font-mono); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--axon); margin-top:14px;}
+.explain h4:first-child{margin-top:0;}
+.explain p{font-size:0.9rem; line-height:1.55; margin-top:4px; color:var(--text);}
+.explain .wrongwhy{color:var(--muted); font-size:0.85rem; margin-top:2px;}
+.explain .tip{border-left:3px solid var(--dendrite); padding-left:12px; margin-top:14px;}
+
+/* ---------- Toast / XP float ---------- */
+#xpfloat{position:fixed; top:70px; right:20px; z-index:50; display:flex; flex-direction:column; gap:8px; align-items:flex-end;}
+.xpchip{font-family:var(--font-mono); font-weight:600; background:var(--dendrite); color:#241500; padding:6px 14px; border-radius:20px; animation:floatup 1.4s ease forwards;}
+@keyframes floatup{0%{opacity:0; transform:translateY(6px);}15%{opacity:1; transform:translateY(0);}80%{opacity:1;}100%{opacity:0; transform:translateY(-18px);}}
+
+/* ---------- Confetti ---------- */
+#confetti{position:fixed; inset:0; pointer-events:none; z-index:60; overflow:hidden;}
+.confetto{position:absolute; top:-10px; width:8px; height:14px; opacity:0.9; animation:fall linear forwards;}
+@keyframes fall{to{transform:translateY(110vh) rotate(540deg); opacity:0;}}
+
+/* ---------- Stats / review lists ---------- */
+.statgrid{display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-top:20px;}
+@media(max-width:520px){.statgrid{grid-template-columns:1fr;}}
+.statbox{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px;}
+.statbox .num{font-family:var(--font-display); font-size:1.8rem; font-weight:700; color:var(--axon);}
+.statbox .lbl{color:var(--muted); font-size:0.78rem; text-transform:uppercase; letter-spacing:0.05em; margin-top:2px;}
+
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; margin-top:22px;}
+.panel h3{font-family:var(--font-display); font-size:1.1rem; font-weight:700;}
+.panel .sub{color:var(--muted); font-size:0.85rem; margin-top:2px;}
+
+.topicrow{display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--line);}
+.topicrow:last-child{border-bottom:none;}
+.topicrow .tname{width:160px; font-size:0.85rem; flex-shrink:0;}
+.topicrow .tname .weakflag{font-family:var(--font-mono); font-size:0.6rem; color:var(--incorrect); text-transform:uppercase; letter-spacing:0.06em; display:block;}
+.topicbar{flex:1; height:8px; background:var(--surface2); border-radius:4px; overflow:hidden;}
+.topicbar-fill{height:100%; border-radius:4px;}
+.topicrow .tpct{font-family:var(--font-mono); font-size:0.78rem; width:42px; text-align:right; color:var(--muted);}
+
+/* ---------- Toggle switch ---------- */
+.togglerow{display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px 0; border-bottom:1px solid var(--line);}
+.togglerow:last-child{border-bottom:none;}
+.togglerow .tlabel{font-weight:600;}
+.togglerow .tdesc{color:var(--muted); font-size:0.82rem; margin-top:2px;}
+.switch{position:relative; width:46px; height:26px; background:var(--surface2); border:1px solid var(--line); border-radius:20px; cursor:pointer; flex-shrink:0; padding:0; appearance:none; -webkit-appearance:none;}
+.switch .knob{position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:var(--muted); transition:all .18s ease;}
+.switch.on{background:rgba(73,224,216,0.2); border-color:var(--axon);}
+.switch.on .knob{left:22px; background:var(--axon);}
+.switch:focus-visible{outline:2px solid var(--dendrite); outline-offset:2px;}
+
+/* ---------- badges ---------- */
+.badgegrid{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:16px;}
+@media(max-width:520px){.badgegrid{grid-template-columns:repeat(2,1fr);}}
+.badge{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px; text-align:center; opacity:0.35;}
+.badge.earned{opacity:1; border-color:var(--dendrite);}
+.badge .bicon{font-size:1.6rem;}
+.badge .bname{font-size:0.72rem; margin-top:6px; font-weight:600;}
+
+/* ---------- summary explanations (details) ---------- */
+.reviewlog{margin-top:22px;}
+.reviewlog > summary{cursor:pointer; font-family:var(--font-display); font-weight:700; font-size:1.05rem; padding:6px 0;}
+.reviewlog > summary:focus-visible{outline:2px solid var(--dendrite); outline-offset:2px;}
+.logitem{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px; margin-top:12px;}
+.logitem .lq{font-weight:600; font-size:0.95rem;}
+.logitem .lstate{font-family:var(--font-mono); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.06em;}
+.logitem .lstate.ok{color:var(--correct);}
+.logitem .lstate.no{color:var(--incorrect);}
+.logitem .lans{color:var(--correct); font-size:0.88rem; margin-top:6px;}
+.logitem .lwhy{color:var(--text); font-size:0.86rem; margin-top:6px; line-height:1.5;}
+
+.section-title{font-family:var(--font-display); font-size:1.6rem; font-weight:700; margin-bottom:4px;}
+.muted{color:var(--muted);}
+footer.credit{color:var(--muted); font-size:0.72rem; text-align:center; padding:18px; opacity:0.6;}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#mainContent">Skip to content</a>
+<canvas id="netbg" aria-hidden="true"></canvas>
+<div id="xpfloat" aria-hidden="true"></div>
+<div id="confetti" aria-hidden="true"></div>
+<div id="srAnnounce" class="visually-hidden" aria-live="assertive" role="status"></div>
+
+<div id="app">
+  <div class="topbar">
+    <div class="brand"><span class="spark" aria-hidden="true"></span> NeuroQuest</div>
+    <nav class="navbtns" aria-label="App navigation">
+      <button class="navbtn" id="btnHome" type="button">Home</button>
+      <button class="navbtn" id="btnBack" type="button">Back</button>
+      <button class="navbtn" id="btnRestart" type="button">Restart Level</button>
+      <button class="navbtn" id="btnMute" type="button" aria-label="Sound effects on" aria-pressed="true">🔊</button>
+    </nav>
+  </div>
+
+  <main id="mainContent">
+
+    <!-- ============ HOME ============ -->
+    <section class="screen" id="screen-home" tabindex="-1" aria-labelledby="homeH1">
+      <h1 class="hero" id="homeH1">Learn the nervous system by <span style="color:var(--axon)">firing</span> through it.</h1>
+      <p class="tagline">Every question comes straight from your BIO 004 Week 7 &amp; Week 8 notes: brain, brainstem, meninges, spinal cord, PNS, cranial nerves, plexuses, and the ANS. Answer, get taught, retain it.</p>
+
+      <div class="statbar" id="homeStatbar"></div>
+
+      <div class="menu-grid">
+        <button class="menu-card" type="button" data-go="play"><span class="icon">▶ Continue</span><h3>Play</h3><p>Adaptive round: fresh questions mixed with your weak spots.</p></button>
+        <button class="menu-card" type="button" data-go="levels"><span class="icon">◈ DOK 1 to 3</span><h3>Choose Level</h3><p>Jump straight to recall, application, or reasoning.</p></button>
+        <button class="menu-card" type="button" data-go="stats"><span class="icon">▤ Mastery</span><h3>Statistics</h3><p>XP, accuracy, streaks, and your weakness dashboard.</p></button>
+        <button class="menu-card" type="button" data-go="review"><span class="icon">↺ Fix gaps</span><h3>Review Incorrect</h3><p>Replay only what you have missed.</p></button>
+        <button class="menu-card" type="button" data-go="settings"><span class="icon">⚙ Modes</span><h3>Settings</h3><p>Adaptive mix, study mode, challenge mode, sound, timer.</p></button>
+        <button class="menu-card" type="button" data-go="badges"><span class="icon">✦ Progress</span><h3>Badges</h3><p>Brain Explorer to Professor Slayer.</p></button>
+      </div>
+    </section>
+
+    <!-- ============ LEVEL SELECT ============ -->
+    <section class="screen hidden" id="screen-levels" tabindex="-1" aria-labelledby="levelsH2">
+      <h2 class="section-title" id="levelsH2">Choose your Depth of Knowledge</h2>
+      <p class="muted">Three separate tracks. Switch freely, mastery is tracked per level.</p>
+      <div class="leveltabs" role="tablist" aria-label="Depth of Knowledge level">
+        <button class="leveltab" type="button" role="tab" data-lvl="1" aria-selected="false"><span class="dok">DOK 1</span><span class="name">Recall</span></button>
+        <button class="leveltab" type="button" role="tab" data-lvl="2" aria-selected="false"><span class="dok">DOK 2</span><span class="name">Apply</span></button>
+        <button class="leveltab" type="button" role="tab" data-lvl="3" aria-selected="false"><span class="dok">DOK 3</span><span class="name">Reason</span></button>
+      </div>
+      <div id="levelDetail"></div>
+    </section>
+
+    <!-- ============ QUESTION ============ -->
+    <section class="screen hidden" id="screen-question" tabindex="-1" aria-labelledby="qText">
+      <div class="qmeta">
+        <span id="qCounter">Q 1 / 10</span>
+        <span class="qtag" id="qSourceTag">Adaptive</span>
+        <span class="qtag" id="qTopicTag">Topic</span>
+        <span class="qtag" id="qDokTag">DOK 1</span>
+      </div>
+      <div class="myelin-track" id="myelinTrack" aria-hidden="true"></div>
+      <div class="timerwrap hidden" id="timerWrap" aria-hidden="true"><div class="timerbar" id="timerBar"></div></div>
+      <div class="qcard">
+        <h2 class="qtext" id="qText" tabindex="-1"></h2>
+        <div class="choices" id="qChoices" role="group" aria-label="Answer choices"></div>
+      </div>
+      <div class="explain" id="explainPanel"></div>
+      <div class="actionrow">
+        <button class="btn primary hidden" id="btnNext" type="button">Next question →</button>
+      </div>
+    </section>
+
+    <!-- ============ LEVEL COMPLETE ============ -->
+    <section class="screen hidden" id="screen-complete" tabindex="-1" aria-labelledby="completeH2">
+      <h2 class="section-title" id="completeH2">Round complete</h2>
+      <p class="muted" id="completeSummary"></p>
+      <div class="statgrid" id="completeStats"></div>
+      <details class="reviewlog" id="completeReview">
+        <summary>Full explanations for this round</summary>
+        <div id="completeReviewBody"></div>
+      </details>
+      <div class="actionrow">
+        <button class="btn primary" id="btnPlayAgain" type="button">Play again</button>
+        <button class="btn ghost" id="btnToHomeFromComplete" type="button">Home</button>
+      </div>
+    </section>
+
+    <!-- ============ STATS ============ -->
+    <section class="screen hidden" id="screen-stats" tabindex="-1" aria-labelledby="statsH2">
+      <h2 class="section-title" id="statsH2">Statistics</h2>
+      <div class="statgrid" id="statGrid"></div>
+
+      <div class="panel" id="weaknessPanel">
+        <h3>Weakness dashboard</h3>
+        <p class="sub" id="weaknessSummary"></p>
+        <div class="actionrow">
+          <button class="btn primary" id="btnDrillWeak" type="button">Drill my weak spots</button>
+        </div>
+      </div>
+
+      <h3 style="margin-top:26px; font-family:var(--font-display); font-size:1.1rem;">Mastery by topic</h3>
+      <div id="topicList" style="margin-top:8px;"></div>
+    </section>
+
+    <!-- ============ REVIEW ============ -->
+    <section class="screen hidden" id="screen-review" tabindex="-1" aria-labelledby="reviewH2">
+      <h2 class="section-title" id="reviewH2">Review incorrect questions</h2>
+      <p class="muted" id="reviewSummary"></p>
+      <div class="actionrow">
+        <button class="btn primary" id="btnStartReview" type="button">Replay missed questions</button>
+      </div>
+    </section>
+
+    <!-- ============ SETTINGS ============ -->
+    <section class="screen hidden" id="screen-settings" tabindex="-1" aria-labelledby="settingsH2">
+      <h2 class="section-title" id="settingsH2">Settings</h2>
+      <div class="togglerow">
+        <div id="lblAdaptive"><div class="tlabel">Adaptive mix</div><div class="tdesc">Each round blends fresh questions with your weak spots (about half and half). Turn off for a straight shuffle of the whole level.</div></div>
+        <button class="switch" id="toggleAdaptive" type="button" role="switch" aria-checked="true" aria-labelledby="lblAdaptive"><span class="knob" aria-hidden="true"></span></button>
+      </div>
+      <div class="togglerow">
+        <div id="lblStudy"><div class="tlabel">Study Mode</div><div class="tdesc">Hints, definitions, and structure call-outs available during questions.</div></div>
+        <button class="switch" id="toggleStudy" type="button" role="switch" aria-checked="false" aria-labelledby="lblStudy"><span class="knob" aria-hidden="true"></span></button>
+      </div>
+      <div class="togglerow">
+        <div id="lblChallenge"><div class="tlabel">Challenge Mode</div><div class="tdesc">No hints, explanations withheld until the round ends, timer on, XP bonus.</div></div>
+        <button class="switch" id="toggleChallenge" type="button" role="switch" aria-checked="false" aria-labelledby="lblChallenge"><span class="knob" aria-hidden="true"></span></button>
+      </div>
+      <div class="togglerow">
+        <div id="lblTimer"><div class="tlabel">Timer</div><div class="tdesc">30 seconds per question.</div></div>
+        <button class="switch" id="toggleTimer" type="button" role="switch" aria-checked="false" aria-labelledby="lblTimer"><span class="knob" aria-hidden="true"></span></button>
+      </div>
+      <div class="togglerow">
+        <div id="lblSound"><div class="tlabel">Sound effects</div><div class="tdesc">Chimes for correct / incorrect answers.</div></div>
+        <button class="switch" id="toggleSound" type="button" role="switch" aria-checked="true" aria-labelledby="lblSound"><span class="knob" aria-hidden="true"></span></button>
+      </div>
+      <div class="actionrow">
+        <button class="btn ghost" id="btnResetProgress" type="button">Reset all progress</button>
+      </div>
+    </section>
+
+    <!-- ============ BADGES ============ -->
+    <section class="screen hidden" id="screen-badges" tabindex="-1" aria-labelledby="badgesH2">
+      <h2 class="section-title" id="badgesH2">Badges</h2>
+      <div class="badgegrid" id="badgeGrid"></div>
+    </section>
+
+  </main>
+
+  <footer class="credit">NeuroQuest · built from BIO 004 Week 7 &amp; Week 8 notes, Dr. Sharilyn Rennie · Solano Community College</footer>
+</div>
+
+<script>
+/* ============================================================
+   NEUROQUEST, data, engine, and rendering
+   ============================================================ */
+const TOPICS = [
+  "Nervous Tissue","Gross Anatomy & Integration","Spinal Cord","Peripheral Nervous System",
+  "Cranial Nerves","Nerve Plexuses","Autonomic Nervous System","The Brain","The Brainstem","Meninges & CSF"
+];
+
+const Q = [];
+let _id = 1;
+function add(level, topic, q, choices, correct, why, wrongs, trick, clinical){
+  Q.push({id:_id++, level, topic, q, choices, correct, why, wrongs, trick, clinical: clinical||null});
+}
+
+/* ===== LEVEL 1, DOK 1: recall, vocabulary, no fluff (34 questions) ===== */
+add(1,"Nervous Tissue","What part of a neuron receives incoming signals?",
+  ["Axon","Dendrite","Cell body","Axon terminal"],1,
+  "Dendrites are the branched, tree-like processes that receive incoming signals.",
+  ["The axon carries impulses away, not toward, the cell.","Correct, dendrites receive.","The cell body is the metabolic center, not the receiving structure.","Axon terminals contact the target cell at the far end, not the receiving end."],
+  "Dendrites 'take in', think of tree branches gathering sunlight.");
+
+add(1,"Nervous Tissue","Which glial cell forms the myelin sheath in the CNS?",
+  ["Schwann cell","Astrocyte","Oligodendrocyte","Microglia"],2,
+  "Oligodendrocytes form the myelin sheaths of the CNS, and one cell can myelinate up to 15 axons.",
+  ["Schwann cells myelinate in the PNS, not the CNS.","Astrocytes support the blood-brain barrier and chemical environment, not myelination.","Correct.","Microglia are phagocytic scavenger cells, not myelin producers."],
+  "O for Oligodendrocyte, O for cOre (CNS).");
+
+add(1,"Nervous Tissue","A neuron with many dendrites and one axon, the most common shape in the brain and cord, is called:",
+  ["Unipolar","Bipolar","Multipolar","Pseudounipolar"],2,
+  "Multipolar neurons have many dendrites and one axon and are the most common type, including motor neurons.",
+  ["Unipolar neurons have a single fused process, typical of sensory neurons.","Bipolar neurons have one dendrite and one axon, found in the retina and inner ear.","Correct.","This term wasn't used in the notes for this classification."],
+  null);
+
+add(1,"Nervous Tissue","What is the narrow gap that a neurotransmitter crosses at a chemical synapse?",
+  ["Synaptic vesicle","Synaptic cleft","Axon hillock","Nissl body"],1,
+  "The synaptic cleft is the narrow gap between the two cells that neurotransmitter diffuses across.",
+  ["Vesicles store neurotransmitter inside the end bulb, they aren't the gap itself.","Correct.","The axon hillock is where the cell body joins the axon, unrelated to the synapse gap.","Nissl bodies are rough ER/ribosome clusters for protein synthesis in the cell body."],
+  null);
+
+add(1,"Gross Anatomy & Integration","In the CNS, a cluster of neuron cell bodies is called a:",
+  ["Ganglion","Nucleus","Tract","Nerve"],1,
+  "In the CNS, a cluster of cell bodies is a nucleus; in the PNS the same kind of cluster is a ganglion.",
+  ["Ganglion is the PNS term for a cluster of cell bodies.","Correct.","A tract is a bundle of axons in the CNS, not a cluster of cell bodies.","A nerve is a bundle of axons in the PNS."],
+  "CNS cell-body cluster = nucleus; PNS cell-body cluster = ganglion.");
+
+add(1,"Gross Anatomy & Integration","What is the first component of a reflex arc?",
+  ["Motor neuron","Integration center","Receptor","Effector"],2,
+  "The five components of a reflex arc, in order, are receptor, sensory neuron, integration center, motor neuron, effector.",
+  ["The motor neuron is the fourth component.","The integration center is the third component.","Correct, the receptor detects the stimulus first.","The effector is the last component, carrying out the response."],
+  null);
+
+add(1,"Gross Anatomy & Integration","A reflex with only one synapse in the integration center, like the stretch reflex, is called:",
+  ["Polysynaptic","Monosynaptic","Autonomic","Learned"],1,
+  "A monosynaptic reflex has just one synapse in the integration center, such as the stretch reflex.",
+  ["Polysynaptic reflexes have two or more synapses with interneurons, like the withdrawal reflex.","Correct.","Autonomic reflexes are classified by their effector (smooth muscle, cardiac muscle, glands), not synapse count.","Learned reflexes are built through practice, unrelated to synapse count."],
+  null);
+
+add(1,"Spinal Cord","At what vertebral level does the adult spinal cord end?",
+  ["S2","L4-L5","L1-L2","T12"],2,
+  "The spinal cord tapers into the conus medullaris at the disc between L1 and L2.",
+  ["S2 is roughly where the lumbar enlargement and sacral plexus range end, not where the cord itself terminates.","L4-L5 is below the cord's actual end.","Correct.","T12 is above the cord's actual termination."],
+  "The cord stops growing around age 4-5 while the vertebral column keeps growing, creating this mismatch.");
+
+add(1,"Spinal Cord","Which root of a spinal nerve carries sensory axons into the cord?",
+  ["Anterior (ventral) root","Posterior (dorsal) root","Gray ramus","White ramus"],1,
+  "The posterior (dorsal) root is the sensory root, carrying sensory axons from peripheral receptors into the cord.",
+  ["The anterior (ventral) root is the motor root, carrying axons out to muscles and glands.","Correct.","The gray ramus communicans carries unmyelinated postganglionic autonomic axons, unrelated to the sensory/motor root distinction.","The white ramus communicans carries myelinated preganglionic axons, present only T1-L2."],
+  "Dorsal = sensory (goes 'down' into the cord from the back); think 'Dorsal-in, sensory.'");
+
+add(1,"Spinal Cord","In a cross-section of the spinal cord, where is the gray matter located?",
+  ["On the outside, surrounding white matter","In a butterfly shape at the core","Scattered evenly throughout","Only in the posterior horns"],1,
+  "The spinal cord's gray matter is the inner, butterfly-shaped region of neuron cell bodies, the reverse of the brain's arrangement.",
+  ["This describes the brain's arrangement (gray outside), not the cord's.","Correct.","Gray matter is organized into distinct horns, not scattered evenly.","Gray matter forms anterior, lateral, and posterior horns, not just the posterior horn."],
+  "Cord: white outside, gray inside (butterfly). Brain: gray outside, white inside. Opposite pattern.");
+
+add(1,"Spinal Cord","Which spinal cord horn contains somatic motor nuclei that drive skeletal muscle contraction?",
+  ["Posterior horn","Lateral horn","Anterior horn","Gray commissure"],2,
+  "The anterior (ventral) horn holds somatic motor nuclei that drive skeletal muscle contraction.",
+  ["The posterior horn holds interneurons and incoming sensory axons.","The lateral horn holds autonomic motor nuclei and is present only in thoracic and lumbar segments.","Correct.","The gray commissure is the bridge connecting the two sides around the central canal, not a horn."],
+  null);
+
+add(1,"Peripheral Nervous System","What is the outermost connective tissue wrapping of an entire nerve called?",
+  ["Endoneurium","Perineurium","Epineurium","Fascicle"],2,
+  "The epineurium is the outermost wrapping, around the entire nerve.",
+  ["The endoneurium is the innermost wrapping, around each individual axon.","The perineurium is the middle wrapping, around each fascicle.","Correct.","A fascicle is a bundle of axons, not a connective tissue layer."],
+  "Endo (inner, one axon) → Peri (middle, a fascicle) → Epi (outer, the whole nerve).");
+
+add(1,"Peripheral Nervous System","How many pairs of spinal nerves are there in total?",
+  ["12","31","24","8"],1,
+  "There are 31 pairs of spinal nerves: 8 cervical, 12 thoracic, 5 lumbar, 5 sacral, and 1 coccygeal.",
+  ["12 is the number of cranial nerve pairs, not spinal.","Correct.","24 doesn't match any listed spinal nerve count.","8 is just the cervical pair count, not the total."],
+  null);
+
+add(1,"Peripheral Nervous System","Which sensory receptor type responds to light?",
+  ["Mechanoreceptor","Nociceptor","Photoreceptor","Chemoreceptor"],2,
+  "Photoreceptors respond to light and are found in the retina of the eye.",
+  ["Mechanoreceptors respond to mechanical force like touch and pressure.","Nociceptors respond to potentially damaging stimuli, producing pain.","Correct.","Chemoreceptors respond to chemicals in solution, like smell and taste."],
+  null);
+
+add(1,"Peripheral Nervous System","Proprioceptors, which detect body position and movement, are classified by location as:",
+  ["Exteroceptors","Interoceptors","Visceroceptors","A distinct location category"],3,
+  "Proprioceptors form their own location category, they detect position and movement in muscles, tendons, and joints, distinct from exteroceptors and interoceptors.",
+  ["Exteroceptors detect stimuli at or near the body surface.","Interoceptors detect stimuli inside the organs and blood vessels.","Visceroceptors is another name for interoceptors, not proprioceptors.","Correct."],
+  null);
+
+add(1,"Cranial Nerves","Which cranial nerve is the largest and carries sensation from the face?",
+  ["CN V, Trigeminal","CN VII, Facial","CN X, Vagus","CN III, Oculomotor"],0,
+  "CN V, the trigeminal nerve, is the largest cranial nerve, carrying facial sensation and controlling chewing muscles, via three branches.",
+  ["Correct.","CN VII (Facial) is mixed but controls facial expression and taste, and is not the largest.","CN X (Vagus) controls thoracic/abdominal organs, voice, and swallowing.","CN III (Oculomotor) is a motor nerve for most eye movements."],
+  null);
+
+add(1,"Cranial Nerves","Which cranial nerve is purely responsible for smell?",
+  ["CN I, Olfactory","CN II, Optic","CN VIII, Vestibulocochlear","CN IX, Glossopharyngeal"],0,
+  "CN I, the olfactory nerve, is a sensory nerve responsible for smell.",
+  ["Correct.","CN II (Optic) is sensory for vision, not smell.","CN VIII is sensory for hearing and balance.","CN IX is mixed, handling taste from the back of the tongue and swallowing, not smell."],
+  null);
+
+add(1,"Cranial Nerves","How many pairs of cranial nerves are there?",
+  ["31","10","12","8"],2,
+  "There are twelve pairs of cranial nerves, numbered I to XII.",
+  ["31 is the number of spinal nerve pairs.","10 is close to but not the correct count, CN I and II attach above the brainstem, and the notes list all 12.","Correct.","8 is only the cervical spinal nerve count."],
+  null);
+
+add(1,"Cranial Nerves","CN XII, the hypoglossal nerve, controls movement of the:",
+  ["Eye","Tongue","Diaphragm","Larynx"],1,
+  "CN XII, the hypoglossal nerve, controls movement of the tongue and passes through the hypoglossal canal.",
+  ["Eye movement is controlled by CN III, IV, and VI.","Correct.","The diaphragm is supplied by the phrenic nerve from the cervical plexus, not a cranial nerve.","Voice/larynx involvement is more associated with CN X, the vagus."],
+  null);
+
+add(1,"Nerve Plexuses","Which nerve plexus gives rise to the phrenic nerve, the motor supply of the diaphragm?",
+  ["Brachial plexus","Cervical plexus","Lumbar plexus","Sacral plexus"],1,
+  "The cervical plexus, formed from C1 to C4, serves the neck and shoulders and gives off the phrenic nerve to the diaphragm.",
+  ["The brachial plexus (C5-T1) serves the shoulder and upper limb, not the diaphragm.","Correct.","The lumbar plexus (L1-L4) serves the lower abdominal wall and part of the lower limb.","The sacral plexus (L4-S4) serves the buttock, perineum, and most of the lower limb."],
+  "Teaching phrase: 'C3, 4, 5 keep the diaphragm alive.'");
+
+add(1,"Nerve Plexuses","The brachial plexus is formed from the anterior rami of which spinal nerves?",
+  ["C1-C4","C5-T1","L1-L4","L4-S4"],1,
+  "The brachial plexus is formed from the anterior rami of C5 to T1 and serves the shoulder and entire upper limb.",
+  ["C1-C4 forms the cervical plexus.","Correct.","L1-L4 forms the lumbar plexus.","L4-S4 forms the sacral plexus."],
+  null);
+
+add(1,"Nerve Plexuses","Which spinal nerves' anterior rami do NOT form a plexus, running straight to the thoracic wall instead?",
+  ["C1-C4","T2-T12","L1-L4","S4-S5"],1,
+  "The intercostal nerves, the anterior rami of T2 to T12, are the exception, they don't form a plexus but run directly to the thoracic wall.",
+  ["C1-C4 forms the cervical plexus.","Correct.","L1-L4 forms the lumbar plexus.","S4-S5 forms the coccygeal plexus."],
+  null);
+
+add(1,"Autonomic Nervous System","How many neurons are in the standard autonomic motor pathway, from CNS to effector?",
+  ["One","Two","Three","Four"],1,
+  "The autonomic system always uses two neurons in a row, a preganglionic and a postganglionic neuron, with a synapse in a ganglion between them.",
+  ["One neuron describes the somatic system's pathway, not the autonomic system's.","Correct.","Three neurons is not the pattern described in the notes.","Four neurons is not the pattern described in the notes."],
+  null);
+
+add(1,"Autonomic Nervous System","Which division of the ANS is described as 'rest and digest'?",
+  ["Sympathetic","Parasympathetic","Somatic","Enteric"],1,
+  "The parasympathetic division is the 'rest and digest' division, also called the craniosacral division.",
+  ["The sympathetic division is 'fight or flight,' also called thoracolumbar.","Correct.","The somatic system is voluntary control of skeletal muscle, not an ANS division.","The enteric system is the semi-independent 'brain of the gut,' not classified as rest-and-digest."],
+  null);
+
+add(1,"Autonomic Nervous System","The sympathetic division's preganglionic neurons originate in which spinal cord segments?",
+  ["S2-S4","T1-L2","C1-C4","L1-L4"],1,
+  "The sympathetic (thoracolumbar) division's preganglionic cell bodies sit in the lateral gray horns of the T1 to L2 spinal segments.",
+  ["S2-S4 is where parasympathetic preganglionic neurons originate in the spinal cord.","Correct.","C1-C4 forms the cervical plexus, unrelated to sympathetic origin.","L1-L4 forms the lumbar plexus, unrelated to sympathetic origin."],
+  "Sympathetic = thoracolumbar (T1-L2). Parasympathetic = craniosacral (brainstem + S2-S4).");
+
+add(1,"The Brain","Which lobe of the cerebrum contains the primary visual cortex?",
+  ["Frontal","Temporal","Occipital","Parietal"],2,
+  "The occipital lobe, at the back of the cerebrum, houses the primary visual cortex at the calcarine sulcus.",
+  ["The frontal lobe handles voluntary movement, motor planning, and speech production.","The temporal lobe handles hearing, language comprehension, and memory.","Correct.","The parietal lobe handles somatic sensation and spatial orientation."],
+  null);
+
+add(1,"The Brain","What structure connects the two cerebral hemispheres?",
+  ["Internal capsule","Corpus callosum","Arcuate fasciculus","Fornix"],1,
+  "The corpus callosum is the largest commissural fiber tract, connecting matching gyri between the two hemispheres.",
+  ["The internal capsule is a projection fiber tract connecting cortex to lower brain regions, not the two hemispheres.","Correct.","The arcuate fasciculus is an association fiber linking Broca's and Wernicke's areas within one hemisphere.","The fornix was not covered in these notes as the hemisphere-connecting structure."],
+  null);
+
+add(1,"The Brain","Which part of the diencephalon is the main sensory relay station to the cortex?",
+  ["Hypothalamus","Epithalamus","Thalamus","Pineal gland"],2,
+  "The thalamus, paired oval masses forming about 80 percent of the diencephalon, is the main sensory relay station to the cortex.",
+  ["The hypothalamus is the master control center for homeostasis, not the sensory relay.","The epithalamus is the small posterior part containing the pineal gland and habenular nuclei.","Correct.","The pineal gland secretes melatonin; it's part of the epithalamus, not the relay station."],
+  null);
+
+add(1,"The Brain","Which basal ganglia and cerebellar disorder is linked to loss of the substantia nigra?",
+  ["Alzheimer disease","Parkinson disease","Multiple sclerosis","Bell's palsy"],1,
+  "The substantia nigra ties the brainstem to movement, and its loss is the basis of Parkinson disease.",
+  ["Alzheimer disease was not linked to the substantia nigra in these notes.","Correct.","Multiple sclerosis involves the immune system stripping myelin from CNS axons, unrelated to the substantia nigra.","Bell's palsy is sudden CN VII weakness, unrelated to the substantia nigra."],
+  null);
+
+add(1,"The Brainstem","Which is the most inferior region of the brainstem, continuous with the spinal cord?",
+  ["Midbrain","Pons","Medulla oblongata","Diencephalon"],2,
+  "The medulla oblongata is the most inferior region of the brainstem, continuous with the spinal cord at the foramen magnum.",
+  ["The midbrain is the most superior brainstem region.","The pons is the middle brainstem region, a bridge to the cerebellum.","Correct.","The diencephalon sits above the brainstem entirely, connecting the cerebrum and brainstem."],
+  null);
+
+add(1,"The Brainstem","Which brainstem structure keeps the cortex awake, alert, and attentive?",
+  ["Substantia nigra","Reticular activating system","Cerebral peduncles","Pontine nuclei"],1,
+  "The reticular activating system (RAS) is the ascending part of the reticular formation network; it keeps the cortex awake, alert, and attentive.",
+  ["The substantia nigra regulates movement, tied to Parkinson disease.","Correct.","The cerebral peduncles carry descending motor tracts, unrelated to arousal.","The pontine nuclei relay motor information from cortex to cerebellum, unrelated to arousal."],
+  null);
+
+add(1,"The Brainstem","In the medulla, the decussation of the pyramids refers to:",
+  ["CSF crossing the midline","Most corticospinal fibers crossing to the opposite side","Cranial nerve nuclei clustering","The junction of pons and midbrain"],1,
+  "The decussation of the pyramids is the crossover point where most corticospinal fibers pass to the opposite side, explaining why one hemisphere controls the opposite side of the body.",
+  ["CSF flow through the aqueduct is a separate process, not the pyramidal decussation.","Correct.","Cranial nerve nuclei clustering isn't what 'decussation' describes.","The pons-midbrain junction isn't what decussation refers to."],
+  null);
+
+add(1,"Meninges & CSF","Name the three meningeal layers from outermost to innermost.",
+  ["Pia, arachnoid, dura","Dura, arachnoid, pia","Arachnoid, dura, pia","Dura, pia, arachnoid"],1,
+  "From outermost to innermost: dura mater, arachnoid mater, and pia mater.",
+  ["This lists them in reverse order.","Correct.","This order is scrambled, arachnoid is the middle layer, not outermost.","This order is scrambled, pia is innermost, not middle."],
+  "'Tough mother' (dura) outside, 'tender mother' (pia) innermost, hugging the brain surface.");
+
+add(1,"Meninges & CSF","Where is cerebrospinal fluid produced?",
+  ["Arachnoid granulations","Choroid plexus","Subdural space","Dural venous sinuses"],1,
+  "CSF is produced by the choroid plexus, networks of capillaries wrapped in ependymal cells found in the lateral, third, and fourth ventricles.",
+  ["Arachnoid granulations are where CSF is reabsorbed, not produced.","Correct.","The subdural space is only a potential space with a thin fluid film, not a CSF production site.","Dural venous sinuses collect venous blood (and reabsorbed CSF), they don't produce it."],
+  null);
+
+add(1,"Meninges & CSF","Which meningeal space contains cerebrospinal fluid?",
+  ["Epidural space","Subdural space","Subarachnoid space","There is no cranial epidural space"],2,
+  "The subarachnoid space, between the arachnoid mater and pia mater, is where CSF is found around the brain and cord.",
+  ["The epidural space contains fat and veins in the vertebral canal, not CSF, and doesn't exist in the cranium.","The subdural space is only a potential space with a thin fluid film, not CSF.","Correct.","This statement is true about the cranium but doesn't answer which space holds CSF."],
+  null);
+
+add(1,"Meninges & CSF","At what spinal level is a lumbar puncture safely performed?",
+  ["C1-C2","T6-T7","L3-L4 or L4-L5","S1-S2"],2,
+  "A lumbar puncture is performed between L3-L4 or L4-L5, safely below where the spinal cord ends (L1-L2).",
+  ["C1-C2 is far too high and would risk the spinal cord and brainstem.","T6-T7 is well above the cord's end and would risk the cord.","Correct.","S1-S2 is technically below the cord too, but the notes specify L3-L4/L4-L5 as the standard safe site."],
+  null);
+
+/* ===== LEVEL 2, DOK 2: application, structure/function, some fluff (33 questions) ===== */
+add(2,"Nervous Tissue","A lab partner mentions that neurons, unlike most other cells, cannot do one particular thing. What is it?",
+  ["Produce neurotransmitters","Divide","Conduct an impulse","Form synapses"],1,
+  "Neurons are excitable and can conduct impulses, but they cannot divide, part of why gliomas (tumors of the dividing glial cells) are far more common than neuron-derived tumors.",
+  ["Producing neurotransmitters is a normal, ongoing neuron function.","Correct.","Conducting impulses is a core neuron function they clearly can do.","Forming synapses is a normal neuron function."],
+  null);
+
+add(2,"Nervous Tissue","A machinist severs a nerve in his forearm. His surgeon says it has a good chance of regrowing because of a structure present on the wrapping Schwann cells. What structure is this?",
+  ["Myelin sheath, it insulates the axon","Neurolemma, it guides the regrowing axon","Node of Ranvier, it speeds conduction","Satellite cells, they nourish the cell body"],1,
+  "The neurolemma, the outer layer of the Schwann cell, is present in the PNS and guides the axon as it regrows, unlike the CNS, where oligodendrocytes lack a neurolemma.",
+  ["The myelin sheath insulates and speeds conduction but isn't the structure that guides regrowth.","Correct.","Nodes of Ranvier enable saltatory conduction, not regeneration guidance.","Satellite cells support ganglion cell bodies, not axon regrowth."],
+  null,
+  "This is why a cut nerve in the arm can regrow, but a cut tract in the spinal cord usually cannot.");
+
+add(2,"Gross Anatomy & Integration","A man steps on a nail and his foot yanks upward before he consciously registers pain. Which term describes this reflex, and why?",
+  ["Monosynaptic, because it's automatic","Polysynaptic, because interneurons are involved in withdrawal reflexes","Autonomic, because it involves smooth muscle","Learned, because it requires practice"],1,
+  "The withdrawal reflex is a polysynaptic reflex, two or more synapses, involving interneurons, unlike the single-synapse stretch reflex.",
+  ["'Automatic' doesn't determine synapse count.","Correct.","This reflex involves skeletal muscle (a somatic reflex), not smooth muscle.","This is an innate reflex, present from birth, not a learned one."],
+  null);
+
+add(2,"Gross Anatomy & Integration","A clinician taps below a patient's kneecap and watches the lower leg kick outward. What does this single test check?",
+  ["Only the sensory neuron","Only the integration center","The entire reflex arc, from receptor to effector","Cranial nerve function"],2,
+  "The patellar reflex checks the whole reflex arc: the receptor, sensory and motor neurons, and the spinal cord segment in between, a missing reflex points to a break somewhere along that pathway.",
+  ["The test checks far more than just the sensory neuron in isolation.","The test checks far more than just the integration center in isolation.","Correct.","This is a spinal reflex, not a cranial nerve test."],
+  null);
+
+add(2,"Spinal Cord","A rock climber fractures a vertebra at L4-L5. Imaging shows the fragments pressing on loose, hair-like nerve roots rather than the spinal cord itself. Why did the cord escape direct injury?",
+  ["The cord is protected by extra meninges at this level","The spinal cord ends around L1-L2, so only the cauda equina occupies the canal below that","The vertebral column doesn't have a canal below L4","Nerve roots at this level don't carry motor or sensory information"],1,
+  "The spinal cord tapers into the conus medullaris around L1-L2; below that, only the loose cauda equina occupies the vertebral canal, which is why lower-level trauma can spare the cord itself.",
+  ["The meninges don't change in number at different vertebral levels.","Correct.","The vertebral canal continues the full length of the column.","The cauda equina roots still carry full sensory and motor function."],
+  null);
+
+add(2,"Spinal Cord","A patient with a history of shingles develops a painful rash in a single band-like strip on her torso. The pattern relates to where a certain viral reservoir sits. Which structure is this?",
+  ["Anterior horn","Posterior root ganglion","Central canal","Lateral horn"],1,
+  "The posterior (dorsal) root ganglion holds the cell bodies of sensory neurons for each spinal segment; the varicella virus hides there for decades, and when it reactivates as shingles, the rash follows the strip of skin served by that one ganglion.",
+  ["The anterior horn holds somatic motor nuclei, unrelated to the viral reservoir.","Correct.","The central canal is a CSF channel, not a viral reservoir.","The lateral horn holds autonomic motor nuclei, unrelated to the viral reservoir."],
+  null);
+
+add(2,"Spinal Cord","A patient has a complete spinal cord injury at T6. Her legs are paralyzed, but her arms and shoulders move normally and she breathes on her own. What explains this pattern?",
+  ["The tracts carry every signal between the brain and body below the level of injury, so only function below T6 is lost","The injury only affected gray matter, not white matter","Damage above T6 caused loss below it, but the reverse doesn't occur","The diaphragm was affected because it's controlled from T6"],0,
+  "A spinal cord injury interrupts the ascending and descending tracts; because those tracts carry every signal between the brain and body below the injury, function is lost below the level of injury while everything above it is spared.",
+  ["Correct.","The pattern described is about level of injury, not tissue type.","This doesn't match the notes' explanation.","The diaphragm is controlled by the phrenic nerve from the cervical plexus (C3-C5), well above T6, consistent with her breathing on her own."],
+  null);
+
+add(2,"Peripheral Nervous System","A patient with diabetes has lost her sense of vibration and deep, continuous pressure in her feet, but light touch is still intact. Which receptor type is most associated with what's lost?",
+  ["Tactile (Meissner) corpuscles","Lamellar (Pacinian) corpuscles","Free nerve endings","Tactile (Merkel) discs"],1,
+  "Lamellar (Pacinian) corpuscles, in the deep dermis and hypodermis, detect deep pressure and vibration, matching the sensation lost.",
+  ["Meissner corpuscles detect fine, discriminative touch, which the patient retained.","Correct.","Free nerve endings detect pain, temperature, and crude touch, not vibration.","Merkel discs detect light, discriminative touch, which the patient retained."],
+  null);
+
+add(2,"Peripheral Nervous System","A surgeon repairing a lacerated wrist nerve carefully aligns the fascicles before suturing. Which connective tissue layer is she primarily relying on to hold the nerve's shape?",
+  ["Endoneurium alone","Epineurium and perineurium","Myelin sheath","Neurofibrils"],1,
+  "The epineurium and perineurium hold a cut nerve's shape, which lets a surgeon line up the fascicles and repair it.",
+  ["The endoneurium wraps individual axons, but isn't the primary structural layer for repair.","Correct.","The myelin sheath insulates axons; it isn't a repair-relevant connective tissue.","Neurofibrils are cytoskeletal fibers inside neurons, not connective tissue."],
+  null);
+
+add(2,"Peripheral Nervous System","A patient has deep muscle soreness and skin tenderness along the spine after a fall, with no radiation into the limbs. Which ramus is most likely involved?",
+  ["Anterior (ventral) ramus","Posterior (dorsal) ramus","Meningeal branch","Rami communicantes"],1,
+  "The posterior (dorsal) ramus supplies the deep muscles and skin of the posterior trunk; symptoms confined there, without limb involvement, point away from the anterior ramus, which forms the plexuses supplying the limbs.",
+  ["The anterior ramus supplies the limbs, limb symptoms would point here, but this patient has none.","Correct.","The meningeal branch supplies the vertebrae and meninges, not the back's muscles and skin.","Rami communicantes carry autonomic fibers, unrelated to this presentation."],
+  null);
+
+add(2,"Cranial Nerves","A patient wakes up with one side of her face drooping, she can't close her eye or raise the corner of her mouth, though taste and hearing seem unaffected. Which cranial nerve is most likely involved?",
+  ["CN V, Trigeminal","CN VII, Facial","CN III, Oculomotor","CN X, Vagus"],1,
+  "This describes Bell's palsy, sudden weakness of CN VII (Facial), which controls facial expression.",
+  ["CN V controls facial sensation and chewing, not facial expression.","Correct.","CN III controls eye movements and pupil constriction, not facial expression.","CN X controls thoracic/abdominal organs, voice, and swallowing, not facial expression."],
+  null);
+
+add(2,"Cranial Nerves","A skull fracture passes through the jugular foramen. Doctors anticipate a cluster of deficits rather than just one. Which nerves are at risk together?",
+  ["CN III, IV, VI","CN V, VII, VIII","CN IX, X, XI","CN I, II, XII"],2,
+  "The jugular foramen carries CN IX, X, and XI side by side, so a fracture there can knock out all three at once, producing a cluster of swallowing, voice, and shoulder signs.",
+  ["CN III, IV, and VI pass through the superior orbital fissure, not the jugular foramen.","CN V passes through several foramina and CN VII/VIII through the internal acoustic meatus.","Correct.","CN I, II, and XII pass through separate foramina, none of them the jugular foramen."],
+  null);
+
+add(2,"Cranial Nerves","A patient reports stabbing, electric-shock-like facial pain when she brushes her teeth, localized to the branches of a single nerve. Which condition and nerve does this describe?",
+  ["Bell's palsy, CN VII","Trigeminal neuralgia, CN V","Vagal neuropathy, CN X","Glossopharyngeal neuralgia, CN IX"],1,
+  "Trigeminal neuralgia is stabbing facial pain along the branches of CN V, the largest cranial nerve, with three branches supplying facial sensation.",
+  ["Bell's palsy causes facial weakness/drooping, not stabbing pain.","Correct.","CN X doesn't carry facial sensation.","This wasn't discussed in the notes in this context."],
+  null);
+
+add(2,"Nerve Plexuses","A newborn sustains a traction injury to her upper limb during delivery, resulting in weakness across her entire arm and shoulder. Which plexus was most likely damaged?",
+  ["Cervical plexus","Brachial plexus","Lumbar plexus","Sacral plexus"],1,
+  "The brachial plexus (C5-T1) serves the shoulder and entire upper limb; damage produces weakness and sensory loss across that whole region.",
+  ["Cervical plexus damage affects the neck and shoulder, and possibly breathing, not the whole arm.","Correct.","The lumbar plexus serves the lower abdominal wall and part of the lower limb.","The sacral plexus serves the buttock, perineum, and most of the lower limb."],
+  null);
+
+add(2,"Nerve Plexuses","A pelvic fracture damages a patient's sacral plexus. Aside from lower-limb motor and sensory loss, which additional structure passing through this plexus puts pelvic organ function at risk?",
+  ["Phrenic nerve","Femoral nerve","Pudendal nerve","Obturator nerve"],2,
+  "The pudendal nerve is one of the major nerves of the sacral plexus, alongside the sciatic and gluteal nerves; damage here can affect perineal function too.",
+  ["The phrenic nerve arises from the cervical plexus.","The femoral nerve arises from the lumbar plexus.","Correct.","The obturator nerve arises from the lumbar plexus."],
+  null);
+
+add(2,"Nerve Plexuses","Why does damage to a single spinal nerve root rarely cause complete paralysis of a limb region?",
+  ["Because each limb region draws axons from several spinal nerves, so overlap covers the gap","Because spinal nerve roots regenerate quickly","Because the plexus bypasses the spinal cord entirely","Because only motor axons pass through plexuses, not sensory ones"],0,
+  "The plexus design is a safety feature: because each limb region draws axons from several spinal nerves, a single damaged root weakens an area but rarely paralyzes it completely.",
+  ["Correct.","Regeneration speed isn't the mechanism described.","Plexuses are formed from spinal nerve anterior rami, which originate from the spinal cord.","Spinal nerves and the plexuses they form are mixed, carrying both sensory and motor axons."],
+  null);
+
+add(2,"Autonomic Nervous System","During a panic attack, a patient's heart races, pupils dilate, and digestion seems to 'shut off.' Which ANS division is dominating, and why does digestion slow?",
+  ["Parasympathetic, it promotes digestion","Sympathetic, it slows digestion while supporting exercise and emergency responses","Somatic, it controls involuntary organs","Enteric, it works independently of the CNS during stress"],1,
+  "The sympathetic division supports exercise, excitement, and emergencies; its effects include dilating pupils, speeding the heart, opening airways, and slowing digestion.",
+  ["The parasympathetic division promotes digestion and slows the heart, the opposite of what's described.","Correct.","The somatic system controls skeletal muscle, not involuntary organs.","The enteric system runs the gut semi-independently, but isn't driving this systemic pattern."],
+  null);
+
+add(2,"Autonomic Nervous System","Why does an autonomic drug need to act at two different sites to reach an organ, when a somatic drug only needs one?",
+  ["The ANS uses a two-neuron pathway with a ganglionic synapse; the somatic system uses one neuron straight to the muscle","The ANS has no ganglia at all","The somatic system also uses two neurons","The ANS neurons are unmyelinated, so drugs can't reach them"],0,
+  "The somatic system reaches its muscle with a single neuron, while the autonomic system always uses two neurons with a synapse in a ganglion between them, giving a drug two possible sites of action.",
+  ["Correct.","Autonomic ganglia are a defining feature of the ANS pathway.","The somatic system uses only one motor neuron.","Myelination status doesn't explain this two-site pharmacology."],
+  null);
+
+add(2,"Autonomic Nervous System","Which is the largest autonomic plexus in the abdomen, surrounding the celiac trunk and supplying most of the abdominal organs?",
+  ["Cardiac plexus","Hypogastric plexus","Celiac (solar) plexus","Renal plexus"],2,
+  "The celiac (solar) plexus is the largest autonomic plexus; it surrounds the celiac trunk and supplies most of the abdominal organs.",
+  ["The cardiac plexus supplies the heart, in the thorax.","The hypogastric plexus supplies the pelvic organs.","Correct.","The renal plexus supplies only the kidneys and ureters."],
+  null);
+
+add(2,"The Brain","A patient understands everything said to him but struggles to produce fluent speech, growing frustrated when he can't find words. Which cortical area is most likely affected?",
+  ["Wernicke's area","Broca's area","Primary visual cortex","Primary somatosensory cortex"],1,
+  "Broca's area, in the inferior frontal gyrus, controls the motor production of speech; damage causes non-fluent speech with preserved comprehension.",
+  ["Wernicke's area handles comprehension, which this patient retains.","Correct.","The primary visual cortex processes vision, unrelated to this pattern.","The primary somatosensory cortex processes touch, unrelated to this pattern."],
+  null);
+
+add(2,"The Brain","A stroke patient loses the ability to recognize faces, though her vision (light, edges, motion) is otherwise intact. Which cortical area is most likely affected?",
+  ["Primary visual cortex","Visual association area","Primary auditory cortex","Prefrontal cortex"],1,
+  "The visual association area, surrounding the primary visual cortex, recognizes faces and objects, distinct from the primary visual cortex, which receives raw visual input.",
+  ["Damage there would impair basic vision, which this patient retains.","Correct.","The primary auditory cortex processes hearing, unrelated to face recognition.","The prefrontal cortex handles judgment and planning, not face recognition."],
+  null);
+
+add(2,"The Brain","A patient has a tiny stroke in the internal capsule, yet loses movement and sensation across most of one entire side of her body. Why does such a small lesion cause such a large deficit?",
+  ["The internal capsule funnels nearly all cortex-to-body traffic into one narrow band","The internal capsule contains the basal ganglia directly","The lesion also destroyed the corpus callosum","The internal capsule regenerates poorly compared to other brain regions"],0,
+  "The projection fibers of the internal capsule funnel nearly all traffic between cortex and body into one narrow band, so a small stroke there severs a great deal of wiring at once.",
+  ["Correct.","The internal capsule lies beside the basal ganglia, but doesn't contain them.","Corpus callosum damage would affect interhemispheric communication, not this pattern.","Regeneration capacity isn't the explanation given."],
+  null);
+
+add(2,"The Brain","A patient with a slow-growing tumor near her Circle of Willis has minimal symptoms despite significant narrowing of one artery. What feature of the Circle of Willis explains this?",
+  ["It has no ability to compensate for slow blockages","Its ring structure allows blood to reroute through communicating arteries when a vessel narrows gradually","It only supplies the cerebellum","It is formed entirely from the vertebral arteries"],1,
+  "The Circle of Willis joins the anterior and posterior circulations in a ring; a slow blockage can sometimes be bypassed through the communicating arteries, since gradual narrowing gives the anastomosis time to open.",
+  ["This contradicts the ring's entire purpose.","Correct.","It joins anterior and posterior circulations, supplying far more than the cerebellum.","It's formed from both internal carotid and vertebral/basilar systems."],
+  null);
+
+add(2,"The Brainstem","A patient in the ICU is unresponsive to voice and touch but still has a heartbeat and spontaneous breathing. Which brainstem network, distinct from the vital centers keeping her breathing, is most concerning here?",
+  ["Reticular activating system","Pontine nuclei","Cerebral peduncles","Olives"],0,
+  "The reticular activating system maintains consciousness and arousal; severe damage to this ascending network, separate from the medulla's vital centers, can cause coma even while breathing continues.",
+  ["Correct.","Pontine nuclei relay motor information to the cerebellum, unrelated to consciousness.","Cerebral peduncles carry descending motor tracts, unrelated to consciousness.","The olives relate to the inferior olivary nucleus, not consciousness."],
+  null);
+
+add(2,"The Brainstem","A clinician localizes a lesion based on the finding that a patient's CN VI is weak. Which brainstem region should she focus on?",
+  ["Midbrain","Pons","Medulla oblongata","None, CN VI doesn't arise from the brainstem"],1,
+  "The pons holds the nuclei for CN V, VI, VII, and VIII; a clinician who finds CN VI weak knows to look at the pons.",
+  ["The midbrain holds nuclei for CN III and IV, not CN VI.","Correct.","The medulla holds nuclei for CN VIII through XII, not CN VI.","CN VI is one of the ten cranial nerves whose nuclei sit in the brainstem."],
+  null);
+
+add(2,"Meninges & CSF","A patient develops a headache and stiff neck after a bacterial infection. A lumbar puncture is performed. Which space is the needle drawing fluid from, and what does it normally contain?",
+  ["Epidural space, fat and veins","Subdural space, a thin film of fluid","Subarachnoid space, cerebrospinal fluid","Central canal, ependymal cells"],2,
+  "A lumbar puncture draws fluid from the subarachnoid space (the lumbar cistern), which normally contains cerebrospinal fluid.",
+  ["The epidural space contains fat and veins, not the fluid sampled here.","The subdural space is only a potential space with a thin fluid film.","Correct.","The central canal is a CSF channel within the cord itself, not the site accessed by a tap."],
+  null);
+
+add(2,"Meninges & CSF","After a head injury, a patient develops a rapidly expanding headache and declining consciousness. Imaging shows bleeding between the dura mater and the skull. Which condition is this, and is it typically fast or slow to develop?",
+  ["Subdural hematoma, slow","Epidural hematoma, often rapid, since it's arterial","Subarachnoid hemorrhage, bleeds into CSF","Hydrocephalus, CSF buildup"],1,
+  "An epidural hematoma is bleeding between the dura mater and the skull; because this space is normally sealed, arterial bleeding here can expand quickly, in contrast to slower venous subdural bleeds.",
+  ["A subdural hematoma is bleeding between dura and arachnoid, not between dura and skull.","Correct.","A subarachnoid hemorrhage bleeds into CSF, not between dura and skull.","Hydrocephalus is a ventricular CSF buildup, not a bleed between dura and skull."],
+  null);
+
+add(2,"Meninges & CSF","A newborn's head circumference is growing unusually fast. Imaging shows the brain's fluid-filled chambers significantly enlarged, with elevated intracranial pressure. Which structures are most directly affected?",
+  ["The meninges, meningitis","The ventricles, hydrocephalus","The epidural space, epidural hematoma","The blood-brain barrier, barrier failure"],1,
+  "Hydrocephalus is a buildup of CSF that enlarges the ventricles and raises intracranial pressure.",
+  ["Meningitis is inflammation of the meninges, not primarily a ventricular condition.","Correct.","Epidural hematoma is a traumatic bleed, not a chronic buildup condition.","Barrier failure wasn't the mechanism described for ventricular enlargement."],
+  null);
+
+add(2,"Gross Anatomy & Integration","A stroke patient has sudden right-sided weakness from a lesion in the left hemisphere. What anatomical principle explains why a left-brain lesion produces right-body symptoms?",
+  ["Convergence of neuronal pools","Decussation, most pathways cross to the opposite side","Divergence of sensory signals","Saltatory conduction"],1,
+  "Decussation is the crossing of a pathway to the opposite side; because most pathways decussate, the right half of the brain controls and senses the left half of the body, and vice versa.",
+  ["Convergence describes many neurons feeding one neuron, unrelated to lateralization.","Correct.","Divergence describes one neuron spreading to many, unrelated to lateralization.","Saltatory conduction describes fast impulse jumping between nodes, unrelated to crossing sides."],
+  null);
+
+add(2,"Gross Anatomy & Integration","A single incoming touch signal ultimately activates many different postsynaptic neurons throughout a cortical region. Which type of circuit is being described?",
+  ["Convergence","Divergence","Serial processing","Monosynaptic reflex"],1,
+  "Divergence is a circuit in which one neuron spreads its signal to many neurons.",
+  ["Convergence is the opposite: many neurons feeding one neuron.","Correct.","Serial processing describes a signal passing along a single straight chain.","A monosynaptic reflex is a specific single-synapse reflex, not a general circuit type."],
+  null);
+
+add(2,"Peripheral Nervous System","A fingertip skin sample shows far more tactile corpuscles and Merkel discs than a lower-back sample. What functional difference does this predict?",
+  ["The fingertip will sense fine detail well; the back will sense touch only crudely","Both areas will sense touch identically","The back will be more sensitive because it has more skin surface area","Receptor density has no effect on touch discrimination"],0,
+  "Receptors aren't spread evenly, fingertips are crowded with tactile corpuscles and Merkel discs, which is why they feel fine detail well, while the back, with far fewer receptors, senses touch only crudely.",
+  ["Correct.","This contradicts the point about uneven receptor density.","Surface area alone doesn't determine discrimination, receptor density does.","Receptor density directly determines discrimination ability."],
+  null);
+
+add(2,"Cranial Nerves","A boxer struggles to shrug his shoulders and turn his head against resistance after a hard hit, though his facial expression and swallowing are unaffected. Which cranial nerve is most likely injured?",
+  ["CN VII, Facial","CN X, Vagus","CN XI, Accessory","CN XII, Hypoglossal"],2,
+  "CN XI, the accessory nerve, controls the sternocleidomastoid and trapezius muscles, responsible for shoulder shrug and head turning against resistance.",
+  ["CN VII controls facial expression, which is unaffected here.","CN X affects swallowing and voice, unaffected here.","Correct.","CN XII controls tongue movement, not shoulder or head."],
+  null);
+
+/* ===== LEVEL 3, DOK 3: heavy clinical reasoning, professor-style (29 questions) ===== */
+add(3,"The Brain","A patient suddenly can't move his left arm or leg, and the left side of his face droops. His language and comprehension are completely normal. Given that a lesion causes weakness on the side opposite to where it sits, and language areas are typically left-lateralized, which vessel territory is most likely involved?",
+  ["Left middle cerebral artery","Right middle cerebral artery, since it supplies the lateral cerebrum's motor and sensory cortex, and a right-sided lesion fits both the left-sided weakness and the spared language","Left posterior cerebral artery, supplying the occipital lobe","Right anterior cerebral artery, supplying only the medial frontal and parietal lobes"],1,
+  "The middle cerebral artery supplies the lateral cerebrum, including motor and sensory cortex for the body. Because pathways decussate, left-sided weakness points to a right-hemisphere lesion, and since language is typically left-lateralized, a right-sided MCA lesion fits both the weakness and the spared language.",
+  ["A left MCA stroke would produce right-sided weakness, and would also risk Broca's/Wernicke's areas.","Correct.","The posterior cerebral artery supplies the occipital lobe and would cause visual deficits, not this motor pattern.","The anterior cerebral artery produces more leg-dominant weakness, not this face/arm/leg pattern."],
+  "Two facts do the work here: (1) MCA supplies the lateral cortex's motor/sensory representation of the body, and (2) decussation means the side of weakness tells you the side of the lesion.",
+  null);
+
+add(3,"The Brainstem","A patient is unconscious after an accident, with no gag reflex, no spontaneous breathing, and fixed pupils. Which brainstem region's injury best explains this combination?",
+  ["Midbrain, because it holds the nuclei for CN III and IV","Pons, because it holds the nuclei for CN V through VIII","Medulla oblongata, because it holds the respiratory center and nuclei for CN IX through XII","Cerebellum, because it coordinates movement and posture"],2,
+  "The medulla holds the vital respiratory, cardiac, and vasomotor centers, plus nuclei for CN IX (gag reflex) and CN X. Loss of gag reflex, apnea, and ventilatory drive together point to medullary injury, the most life-threatening brainstem region to damage.",
+  ["The midbrain's CN III/IV nuclei relate to eye movement, not gag reflex or breathing.","The pons holds nuclei for CN V-VIII, not the ones responsible for gag reflex or respiration.","Correct.","The cerebellum coordinates movement, not the respiratory center or gag reflex."],
+  "The medulla's small size but outsized danger is exactly the kind of high-yield fact professors test.",
+  null);
+
+add(3,"Spinal Cord","After a diving injury, a patient has lost pain and temperature sensation bilaterally below the injury and has bilateral motor weakness, but touch and vibration are preserved. Which white matter pattern fits?",
+  ["A lesion isolated to the posterior white columns only","A lesion involving the anterior and lateral white columns and sparing the posterior columns","A lesion of the dorsal root ganglia bilaterally","A lesion confined to the gray commissure only"],1,
+  "Loss of motor function and pain/temperature with preserved touch/vibration fits damage to the anterior and lateral white columns (descending motor and ascending pain/temperature tracts), while the posterior columns (touch, vibration, proprioception) are spared.",
+  ["A posterior-column-only lesion would cause the opposite pattern.","Correct.","Bilateral dorsal root ganglia damage wouldn't selectively spare touch/vibration while sparing motor.","An isolated gray commissure lesion wouldn't produce this widespread bilateral pattern."],
+  null,
+  null);
+
+add(3,"Autonomic Nervous System","A student's heart rate rises noticeably during a stressful moment, even before any obvious sympathetic surge (sweating, dilated pupils) appears. Which anatomical fact best explains this early rise?",
+  ["The heart is only innervated by the sympathetic division","Heart rate can rise simply from withdrawal of parasympathetic input, even before sympathetic activity increases","The vagus nerve only affects the abdomen, not the heart","Heart rate is entirely controlled by the somatic nervous system"],1,
+  "Because the two ANS divisions usually pull an organ in opposite directions, the body can fine-tune it by easing off one division rather than only pushing the other, heart rate rises when parasympathetic input is withdrawn, even before sympathetic activity increases.",
+  ["The heart receives both sympathetic and parasympathetic innervation.","Correct.","The vagus nerve (CN X) carries parasympathetic supply to the chest AND abdomen, including the heart.","The heart is under autonomic, not somatic, control."],
+  null,
+  null);
+
+add(3,"Cranial Nerves","A patient reports that food tastes bland on the front two-thirds of the tongue, and she has trouble producing tears from one eye. Which single cranial nerve could explain both findings together?",
+  ["CN IX, Glossopharyngeal","CN VII, Facial","CN V, Trigeminal","CN X, Vagus"],1,
+  "CN VII, the facial nerve, is mixed and controls facial expression, taste from the front two-thirds of the tongue, and tear and saliva production, the one nerve that explains both symptoms together.",
+  ["CN IX handles taste from the BACK of the tongue, not the front, or tear production.","Correct.","CN V carries facial sensation and controls chewing, not taste or tears.","CN X handles thoracic/abdominal organs, voice, and swallowing, not taste or tears."],
+  "'On Old Olympus' Towering Tops...', CN VII is mixed, combining taste, expression, and secretion in one nerve.",
+  null);
+
+add(3,"Nerve Plexuses","After a lower-back injury, a patient has weakness climbing stairs and numbness on the front and inner thigh, but buttock, posterior thigh, and foot sensation are normal. Which plexus is injured, and which is spared?",
+  ["Sacral plexus injured; lumbar plexus spared","Lumbar plexus injured; sacral plexus spared","Brachial plexus injured; cervical plexus spared","Both lumbar and sacral plexuses injured equally"],1,
+  "The lumbar plexus (L1-L4) serves the anterolateral abdominal wall and part of the lower limb, including hip flexion and anterior thigh sensation via the femoral nerve. The sacral plexus serves the buttock, posterior thigh, and foot, all normal here, indicating it's spared.",
+  ["This reverses the pattern, sacral injury would affect buttock/posterior thigh/foot, which are normal here.","Correct.","This is an upper-limb plexus pairing, unrelated to a lower-back injury.","The spared territory argues against equal involvement of both."],
+  null,
+  null);
+
+add(3,"Meninges & CSF","An infant's head circumference is growing fast, with dilated lateral and third ventricles but a normal fourth ventricle. Where is the CSF obstruction most likely located?",
+  ["At the arachnoid granulations, blocking reabsorption entirely","At the interventricular foramina of Monro or the cerebral aqueduct, before CSF reaches the fourth ventricle","At the median aperture of Magendie, after CSF exits the fourth ventricle","In the subarachnoid space over the cerebral hemispheres only"],1,
+  "CSF flows from the lateral ventricles through the foramina of Monro into the third ventricle, then through the cerebral aqueduct into the fourth. Since the fourth ventricle is spared, the block must be at or before the aqueduct.",
+  ["A total reabsorption block would be expected to dilate the entire system, including the fourth ventricle.","Correct.","A block after the fourth ventricle would let it also dilate, contradicting the normal finding.","This wouldn't selectively enlarge the ventricles this way."],
+  null,
+  null);
+
+add(3,"The Brain","A patient with repeated head impacts shows a gradual decline in planning, impulse control, and judgment, though memory and motor strength remain intact. Which cortical region's dysfunction best fits, and why does preserved motor strength help narrow it down?",
+  ["Primary motor cortex, because judgment problems always come from motor areas","Prefrontal cortex, because it handles executive function and is distinct from the motor cortex, which handles movement","Primary somatosensory cortex, because it's adjacent to the frontal lobe","Wernicke's area, because it's involved in comprehension"],1,
+  "The prefrontal cortex handles executive function: judgment, planning, and personality. Preserved motor strength argues against primary motor cortex involvement, helping localize the deficit to the prefrontal region.",
+  ["Preserved motor strength argues against, not for, motor cortex involvement.","Correct.","The somatosensory cortex processes touch, not judgment, and proximity alone doesn't make it the answer.","Wernicke's area handles language comprehension, not judgment or planning."],
+  null,
+  null);
+
+add(3,"Peripheral Nervous System","A patient has tingling and weakness in the thumb, index, and middle fingers, but the pinky feels normal, with slowed conduction at the wrist. What does the sparing of the pinky tell you about the level of compression?",
+  ["Compression of an entire spinal nerve root, since all fingers should be equally affected","Compression of a specific peripheral nerve distal to where it has already sorted from the brachial plexus, since only part of the hand is affected","Compression at the level of the dorsal root ganglion","Compression at the level of the cell body within the spinal cord"],1,
+  "Because only specific fingers are affected while the pinky is spared, this points to compression of a single peripheral nerve, distally organized, rather than a whole spinal nerve root or a more central lesion.",
+  ["A full nerve root lesion would follow a dermatomal pattern, not spare just the pinky this way.","Correct.","Dorsal root ganglion compression would typically affect an entire dermatome.","A central lesion would be expected to produce a broader, different distribution."],
+  null,
+  null);
+
+add(3,"Gross Anatomy & Integration","A patient's ankle-jerk and knee-jerk reflexes are brisk and immediate, but her hand-withdrawal reflex from a hot surface, while intact, is noticeably slower. What anatomical difference explains this?",
+  ["The withdrawal reflex is monosynaptic and should be the fastest of all reflexes","The patellar/Achilles reflexes are monosynaptic with one synapse, while the withdrawal reflex is polysynaptic with interneurons adding synaptic delay","The withdrawal reflex doesn't use a spinal reflex arc at all","Reflex speed is unrelated to the number of synapses involved"],1,
+  "The patellar and Achilles reflexes are monosynaptic (one synapse). The withdrawal reflex is polysynaptic, involving interneurons, each added synapse adds transmission delay, making it measurably slower.",
+  ["This reverses the facts, the withdrawal reflex is polysynaptic, which is exactly why it's slower.","Correct.","The withdrawal reflex is still a spinal reflex arc, just with more synapses.","The number of synapses directly explains the speed difference."],
+  null,
+  null);
+
+add(3,"Spinal Cord","A stab wound causes a right-sided spinal cord hemisection at T10. The patient loses motor control and proprioception/vibration on the RIGHT side below the injury, but pain and temperature on the LEFT side. Why does the pain/temperature loss fall on the opposite side from the motor/proprioceptive loss?",
+  ["All ascending tracts cross at the same spinal level as they enter","Pain and temperature pathways cross to the opposite side near where they enter the cord, while motor and proprioceptive pathways cross much higher, so a one-sided lesion splits the pattern by side","The stab wound damaged two separate locations","Pain and temperature sensation isn't carried by the spinal cord at all"],1,
+  "This is the classic split pattern (Brown-Séquard): pain/temperature pathways decussate soon after entering the cord, producing contralateral loss, while motor and proprioceptive pathways cross much higher (in the medulla), producing ipsilateral loss below a hemisection.",
+  ["Decussation occurs at specific points, not uniformly at the level of entry for every tract.","Correct.","A single clean hemisection can produce this split pattern without two injury sites.","Pain and temperature are explicitly carried by ascending spinal cord tracts."],
+  "This combines decussation, ascending/descending tracts, and gray/white matter organization into one classic clinical pattern, even though the notes don't name the syndrome directly.",
+  null);
+
+add(3,"Autonomic Nervous System","During exercise, a runner's heart rate, breathing rate, and pupil size all increase together in a coordinated way. Which single anatomical feature best explains why so many organs respond together?",
+  ["Each organ has its own independent nervous system with no central coordination","The sympathetic division's preganglionic neurons, originating together in the T1-L2 spinal segments, broadly innervate multiple organs as a coordinated 'fight or flight' response","The parasympathetic division is responsible for this coordinated activation","Skeletal muscle directly controls the heart and lungs during exercise"],1,
+  "The sympathetic (thoracolumbar, T1-L2) division governs fight-or-flight, with effects that include dilating pupils, speeding the heart, and opening airways, all coordinated outputs of the same division.",
+  ["This contradicts the ANS being an organized system with defined divisions and origins.","Correct.","The parasympathetic division would be expected to slow the heart and constrict airways, the opposite of what's observed.","Skeletal muscle is under somatic control and doesn't directly drive autonomic organs."],
+  null,
+  null);
+
+add(3,"Cranial Nerves","A patient has gradually worsening balance, vertigo, and difficulty hearing in noisy rooms, but vision, facial movement, and swallowing are all normal. A tumor sits near the internal acoustic meatus. Which cranial nerve is most likely compressed?",
+  ["CN VII, Facial, because it also passes through the internal acoustic meatus and controls hearing","CN VIII, Vestibulocochlear, because it's a purely sensory nerve for hearing and balance and passes through the internal acoustic meatus","CN V, Trigeminal, because it controls facial sensation","CN X, Vagus, because it affects swallowing"],1,
+  "CN VIII is sensory only, responsible for hearing and balance, and passes through the internal acoustic meatus, matching both the tumor location and the symptom pattern, while intact vision, facial movement, and swallowing argue against CN II, VII, or X.",
+  ["CN VII shares the meatus but controls facial expression (intact here) and taste/secretion, not primarily hearing/balance.","Correct.","CN V controls facial sensation, unrelated to hearing/balance.","CN X affects swallowing and voice, both normal here."],
+  null,
+  null);
+
+add(3,"The Brainstem","A lesion affects the superior colliculi bilaterally, while the inferior colliculi and cerebral peduncles are spared. Which specific reflex would you expect to be impaired?",
+  ["Auditory startle reflex, because it's controlled by the inferior colliculi","Visual reflexes, such as turning the eyes and head toward a sight, because these are controlled by the superior colliculi","Motor strength, because the cerebral peduncles carry descending motor tracts","Pupillary light reflex, because it's controlled by the inferior colliculi"],1,
+  "The superior colliculi are centers for visual reflexes, such as turning the eyes and head toward a sight; damage there would impair this reflex specifically, while sparing the spared auditory reflex and motor strength.",
+  ["The auditory startle response relates to the inferior colliculi, which are spared.","Correct.","The cerebral peduncles, which carry descending motor tracts, are spared, so motor strength wouldn't be impaired.","The inferior colliculi are the ones spared here, making this an inconsistent pairing regardless."],
+  null,
+  null);
+
+add(3,"Nerve Plexuses","After a hard tackle to the side of the neck, a patient has weakness lifting his shoulder and turning his head, plus reduced diaphragm movement on that side. Which plexus is involved, and which nerve explains the diaphragm finding?",
+  ["Brachial plexus; musculocutaneous nerve","Cervical plexus; phrenic nerve","Lumbar plexus; femoral nerve","Sacral plexus; sciatic nerve"],1,
+  "The cervical plexus (C1-C4, with a C5 contribution) serves the neck and shoulder and gives rise to the phrenic nerve, the sole motor supply to the diaphragm, explaining both findings.",
+  ["The brachial plexus serves the shoulder and arm but doesn't include the phrenic nerve.","Correct.","The lumbar plexus is unrelated to the neck, shoulder, or diaphragm.","The sacral plexus is unrelated to this presentation."],
+  "'C3, 4, 5 keep the diaphragm alive', a high-yield teaching phrase for exactly this injury pattern.",
+  null);
+
+add(3,"The Brain","A patient can no longer judge distances or arrange objects in space correctly, though memory, language, and object recognition remain intact. Which cortical region's dysfunction best explains a deficit isolated to spatial orientation?",
+  ["Primary visual cortex, because it processes all visual information including spatial judgment","Somatosensory association area, because it interprets texture, shape, and spatial orientation","Hippocampus, because it's essential for forming new memories","Broca's area, because it controls speech production"],1,
+  "The somatosensory association area, posterior to the postcentral gyrus, interprets texture, shape, and spatial orientation, matching a deficit isolated to spatial judgment while memory, language, and recognition stay intact.",
+  ["Damage to the primary visual cortex would impair basic vision, not just spatial judgment.","Correct.","Her memory is explicitly intact, arguing against hippocampal dysfunction.","Broca's area controls speech production, and her language is intact."],
+  null,
+  null);
+
+add(3,"Meninges & CSF","Hours after a head injury, a patient develops a severe headache and worsening confusion. Imaging shows a lens-shaped blood collection between the dura mater and the skull that is rapidly expanding. Given that this space is normally tightly fused to bone, what does the rapid expansion most likely indicate about the bleeding source?",
+  ["Slow venous oozing from bridging veins between the dura and arachnoid","Arterial bleeding, since epidural hematomas often expand rapidly, consistent with higher-pressure arterial bleeding despite a delayed 'lucid interval'","A CSF leak rather than a blood collection","Bleeding directly into the subarachnoid space and CSF"],1,
+  "This is a classic epidural hematoma, bleeding between the dura and skull, a space normally sealed. These often expand rapidly, consistent with arterial bleeding, producing an initial lucid interval followed by rapid decline.",
+  ["Bridging vein bleeding describes a subdural hematoma, in a different space and typically slower.","Correct.","A CSF leak wouldn't produce a lens-shaped blood collection.","That would be a subarachnoid hemorrhage, mixing into CSF, not a discrete collection between dura and skull."],
+  null,
+  null);
+
+add(3,"Peripheral Nervous System","A patient develops symmetric weakness and numbness that started in the feet and has climbed to involve the hands over a week, with diminished reflexes throughout, following a mild infection two weeks prior. Which broad category of nervous tissue is most likely under attack?",
+  ["A single cranial nerve","A single nerve plexus","Multiple peripheral nerves broadly and symmetrically, consistent with a peripheral neuropathy rather than a single root or plexus lesion","The primary motor cortex"],2,
+  "A symmetric, ascending pattern affecting multiple limbs and both sensory and motor function, following an infection, points to a widespread peripheral neuropathy rather than a single nerve, root, plexus, or central structure, each of which serves a defined, usually asymmetric, territory.",
+  ["A single cranial nerve wouldn't explain symmetric limb involvement in both feet and hands.","A single plexus lesion would affect one limb region, not a symmetric, ascending, multi-limb pattern.","Correct.","A cortical lesion wouldn't typically produce this symmetric, ascending, peripheral pattern."],
+  "This tests recognizing when a pattern doesn't fit any single named structure and instead points to a broader category, a hallmark of DOK3 reasoning.",
+  null);
+
+add(3,"Gross Anatomy & Integration","A patient with a demyelinating CNS condition is told her lesions are unlikely to recover the way a cut nerve in her arm could. Which combination of facts about CNS versus PNS glial cells best explains this?",
+  ["CNS myelin is made by Schwann cells, which lack a neurolemma","CNS myelin is made by oligodendrocytes, which lack a neurolemma, unlike Schwann cells in the PNS which have one that guides axon regrowth","Oligodendrocytes regenerate faster than Schwann cells","The CNS has no myelin at all, so there's nothing to regenerate"],1,
+  "Oligodendrocytes, which myelinate CNS axons, lack a neurolemma, the outer Schwann cell layer present in the PNS that guides regrowing axons. This absence is why CNS regeneration is very limited.",
+  ["This mixes up the cell types, Schwann cells are PNS, not CNS.","Correct.","This reverses the relationship; CNS regeneration is very limited compared to PNS.","The CNS does have myelin, the problem is regeneration capacity, not absence of myelin."],
+  null,
+  null);
+
+add(3,"Spinal Cord","A patient has gradual difficulty with fine hand movements and mild leg stiffness from a cervical cord compression. Why would a cervical lesion affect both arms and legs, while a lumbar lesion would affect only the legs?",
+  ["Cervical compression affects only the legs; lumbar compression affects only the arms","Cervical compression can affect both arms and legs since ascending/descending tracts to the legs must pass through the cervical level; lumbar compression, being lower, would only affect the legs","Both would produce identical symptoms regardless of level","Neither location contains enough white matter to affect limb function"],1,
+  "Because the cord is a single continuous conduit, tracts serving the legs must still pass through the cervical region to reach the brain, so a cervical lesion can affect both arms (via the cervical enlargement) and legs (via passing tracts), while a lumbar lesion, being below where arm tracts branch off, would affect only the legs.",
+  ["This reverses the logic, a cervical lesion is expected to affect BOTH regions.","Correct.","Lesion level determines which tracts and roots are affected differently.","The cervical segment has a large diameter with a large amount of white matter."],
+  null,
+  null);
+
+add(3,"Autonomic Nervous System","During abdominal surgery, manipulating tissue near the celiac trunk causes an unexpected drop in blood pressure and heart rate, a vagal-type response. Which structures being stimulated together best explain this?",
+  ["The hypogastric plexus and the pudendal nerve","The celiac (solar) plexus, surrounding the celiac trunk, and CN X (vagus), which supplies most of the parasympathetic input to abdominal organs","The renal plexus and the phrenic nerve","The cardiac plexus and the accessory nerve"],1,
+  "The celiac plexus is the largest autonomic plexus, surrounding the celiac trunk; CN X carries most of the parasympathetic supply to the abdomen. Manipulation near the celiac trunk stimulating vagal fibers there can trigger a reflex slowing of heart rate and blood pressure.",
+  ["The hypogastric plexus and pudendal nerve don't match the celiac trunk location or vagal mechanism.","Correct.","The renal plexus and phrenic nerve don't match this scenario.","The cardiac plexus and accessory nerve are unrelated to abdominal vagal reflexes."],
+  null,
+  null);
+
+add(3,"The Brain","After an injury to the medial frontal and parietal lobes, a patient struggles to coordinate both hands together in a complex, planned sequence, though raw strength in each hand tests normally. Which cortical motor area is most specifically associated with this deficit?",
+  ["Primary motor cortex, because it initiates all voluntary movement","Supplementary motor area, because it's located in the medial frontal lobe and coordinates complex bilateral movements","Premotor cortex, because it's lateral, not medial","Frontal eye field, because it's in the middle frontal gyrus"],1,
+  "The supplementary motor area sits in the medial frontal lobe and coordinates complex bilateral movements, matching a bimanual coordination deficit with preserved individual hand strength.",
+  ["Primary motor cortex damage would impair raw strength, which is preserved here.","Correct.","The premotor cortex plans learned movements generally but isn't tied to this medial, bilateral role.","The frontal eye field controls eye movement, unrelated to hand coordination."],
+  null,
+  null);
+
+add(3,"Cranial Nerves","A patient's voice has become hoarse, with occasional coughing while swallowing liquids. An ENT finds reduced vocal cord movement and traces it to a nerve providing autonomic control to the thoracic and abdominal organs as well as voice and swallowing. Which cranial nerve fits, and through which foramen does it exit?",
+  ["CN IX, through the jugular foramen","CN X (Vagus), through the jugular foramen","CN XII, through the hypoglossal canal","CN VII, through the stylomastoid foramen"],1,
+  "CN X, the vagus nerve, provides autonomic control of thoracic/abdominal organs plus voice and swallowing, matching hoarseness, swallowing difficulty, and its broader autonomic role, and exits through the jugular foramen.",
+  ["CN IX handles taste and swallowing, but not voice or broad thoracic/abdominal control.","Correct.","CN XII controls tongue movement, unrelated to voice or autonomic function.","CN VII controls facial expression and taste, unrelated to voice or swallowing this way."],
+  null,
+  null);
+
+add(3,"The Brainstem","A patient has sudden double vision and trouble looking laterally with one eye, but the rest of the cranial nerve exam and consciousness are normal. An MRI localizes a small lesion to a specific brainstem nucleus. Which region and nucleus fit, and why does normal consciousness argue against a wider lesion?",
+  ["Medulla; CN XII nucleus, because consciousness would be unaffected regardless of medullary size","Pons; CN VI (abducens) nucleus, because a small, isolated lesion there wouldn't necessarily disrupt the separate reticular activating system","Midbrain; CN III nucleus, because it controls most eye movements","Cerebellum; no cranial nerve nuclei, because the cerebellum doesn't contain any"],1,
+  "CN VI controls lateral gaze via the lateral rectus muscle, with its nucleus in the pons. A small, isolated pontine lesion there can produce isolated lateral gaze weakness without disrupting the broader, more diffusely distributed reticular activating system that maintains consciousness.",
+  ["CN XII controls tongue movement, not lateral gaze.","Correct.","CN III controls eye movements broadly, not specifically lateral gaze, and sits in the midbrain.","The cerebellum lacks cranial nerve nuclei, and doesn't explain this specific deficit either way."],
+  null,
+  null);
+
+add(3,"Nerve Plexuses","After a pelvic fracture, a patient has weakness and numbness in the buttock, posterior thigh, and entire foot, but hip flexion and anterior thigh sensation are completely normal. Which plexus and nerve are most likely involved?",
+  ["Lumbar plexus; femoral nerve","Sacral plexus; sciatic nerve, given it serves the buttock and most of the lower limb","Cervical plexus; phrenic nerve","Brachial plexus; radial nerve"],1,
+  "The sacral plexus (L4-S4) serves the buttock, perineum, and most of the lower limb via the sciatic nerve, matching buttock, posterior thigh, and foot involvement, while sparing hip flexion and anterior thigh sensation (lumbar plexus/femoral nerve territory).",
+  ["The lumbar plexus and femoral nerve serve the territory that's explicitly spared here.","Correct.","The cervical plexus and phrenic nerve are unrelated to a pelvic fracture with leg symptoms.","The brachial plexus and radial nerve serve the upper limb, unrelated here."],
+  null,
+  null);
+
+add(3,"Meninges & CSF","A lumbar puncture is performed for suspected meningitis. Tracing the needle's path from skin to CSF, which is the correct order of structures crossed, and which one signals proximity to the target by a change in resistance?",
+  ["Skin, ligamentum flavum, epidural space, dura mater, arachnoid mater, subarachnoid space, the ligamentum flavum's give is the tactile landmark","Skin, subcutaneous fat, supraspinous ligament, interspinous ligament, ligamentum flavum, epidural space, dura mater, arachnoid mater, subarachnoid space, the firm ligamentum flavum give is the tactile landmark","Skin, dura mater, epidural space, ligamentum flavum, subarachnoid space, with no specific tactile landmark","Skin directly into the subarachnoid space, bypassing all ligaments and the dura"],1,
+  "The full ordered path is: skin, subcutaneous fat, supraspinous ligament, interspinous ligament, ligamentum flavum, epidural space, dura mater, arachnoid mater, and finally the subarachnoid space. A clinician feels the firm ligamentum flavum give way as a tactile landmark.",
+  ["This skips several structures and places the ligamentum flavum out of order.","Correct.","This skips multiple structures and misorders the dura relative to the ligamentum flavum.","A tap must cross skin, ligaments, the epidural space, and the meninges to reach CSF."],
+  null,
+  null);
+
+add(3,"The Brain","A patient with an isolated absent corpus callosum has fully functional cerebral hemispheres, thalamus, and brainstem individually. Based on what commissural fibers specifically do, what would you predict is most impaired?",
+  ["Communication between gyri within the same hemisphere","Communication between matching gyri of the two hemispheres, since commissural fibers like the corpus callosum specifically connect the two sides","Communication between the cortex and the spinal cord","Communication between the thalamus and hypothalamus"],1,
+  "Commissural fibers, of which the corpus callosum is the largest example, connect matching gyri between the two hemispheres. An isolated defect would impair interhemispheric communication specifically.",
+  ["This describes association fibers, not commissural fibers.","Correct.","This describes projection fibers, not commissural fibers.","This isn't a commissural fiber function."],
+  null,
+  null);
+
+add(3,"Peripheral Nervous System","A patient develops a chronic condition impairing her ability to detect pain and temperature, while vibration and position sense remain largely intact. Which category of sensory receptor, classified by structure, is most likely affected?",
+  ["Encapsulated receptors, because vibration and position sense are typically encapsulated and would be expected to be spared","Free nerve endings, because they are non-encapsulated receptors responsible for pain and temperature detection, matching what's impaired while encapsulated receptors remain intact","Photoreceptors, because they are a distinct sensory category unrelated to skin","Chemoreceptors, because pain is a chemical sensation"],1,
+  "Free nerve endings are non-encapsulated receptors that detect pain, temperature, and crude touch, matching the impairment. Vibration and position sense are typically carried by encapsulated receptors, consistent with those being spared.",
+  ["This names the wrong category as affected, it's free nerve endings, not encapsulated receptors.","Correct.","Photoreceptors are specific to the retina, unrelated to this pattern.","Chemoreceptors detect chemicals in solution, not the pain mechanism described."],
+  null,
+  null);
+
+add(1,"Nervous Tissue","What pigment builds up harmlessly in neurons as a person ages?",
+  ["Melanin","Lipofuscin","Myelin","Neurofibrils"],1,
+  "Lipofuscin is a harmless pigment that builds up in neurons with age.",
+  ["Melanin wasn't described in the notes as the age-related neuron pigment.","Correct.","Myelin is the fatty insulating wrap around axons, not a pigment.","Neurofibrils are cytoskeletal fibers, not a pigment."],
+  null);
+
+add(1,"Nervous Tissue","Which cell classifies most sensory neurons by shape?",
+  ["Multipolar","Bipolar","Unipolar","Purkinje"],2,
+  "Unipolar neurons have a single fused process and are the typical shape of a sensory neuron.",
+  ["Multipolar neurons are the most common overall and are typically motor neurons or interneurons.","Bipolar neurons are found in the retina, inner ear, and olfactory area, not the typical sensory shape overall.","Correct.","Purkinje cells are a distinctive multipolar neuron found in the cerebellum."],
+  null);
+
+add(2,"The Brainstem","A patient with a brainstem tumor has lost the ability to turn her eyes and head reflexively toward a sudden flash of light, but she still turns toward loud sounds normally and her limb strength is unaffected. Which paired structure is most likely involved?",
+  ["Inferior colliculi","Superior colliculi","Cerebral peduncles","Pontine nuclei"],1,
+  "The superior colliculi are centers for visual reflexes, such as turning the eyes and head toward a sight; their damage would selectively impair this reflex while sparing the auditory reflex and motor strength.",
+  ["The inferior colliculi handle auditory reflexes, which are intact here.","Correct.","The cerebral peduncles carry descending motor tracts; her limb strength is unaffected.","The pontine nuclei relay motor information to the cerebellum, unrelated to visual reflexes."],
+  null);
+
+add(3,"The Brainstem","A patient has normal cranial nerve function and normal breathing, but a scan reveals a small hemorrhage isolated to the pontine nuclei, sparing the nearby trigeminal, abducens, facial, and vestibulocochlear nuclei. Based on the specific function of the pontine nuclei, which deficit would you most expect?",
+  ["Loss of facial sensation","Impaired relay of motor information from the cerebral cortex to the cerebellum, potentially affecting coordination","Loss of the gag reflex","Complete loss of consciousness"],1,
+  "The pontine nuclei relay motor information from the cerebral cortex to the cerebellum via the middle cerebellar peduncles; damage isolated to them, even with nearby cranial nerve nuclei spared, would impair this relay and potentially affect coordination.",
+  ["Facial sensation is carried by CN V, whose nucleus is spared here.","Correct.","The gag reflex relates to CN IX/X function in the medulla, not the pontine nuclei's relay role.","Consciousness relies on the reticular activating system, a separate diffuse network."],
+  null,
+  null);
+
+/* ============================================================
+   Engine
+   ============================================================ */
+
+/* ============================================================
+   State
+   ============================================================ */
+const STORE_KEY = "neuroquest_progress_v2";
+function defaultState(){
+  return {
+    xp:0, totalAnswered:0, totalCorrect:0, streak:0, longestStreak:0,
+    timePlayedSec:0,
+    settings:{adaptive:true, study:false, challenge:false, timer:false, sound:true},
+    topicStats:{},      // topic -> {correct, total}
+    missed:{},          // qid -> true (currently unmastered)
+    seen:{},            // qid -> true (has been presented at least once)
+    lastSession:[],     // qids from the previous round, de-prioritized next round
+    prefLength:10,      // preferred questions per round
+    badges:{brain_explorer:false, neural_navigator:false, anatomy_master:false, professor_slayer:false},
+    levelBest:{1:0,2:0,3:0}
+  };
+}
+/* deep-merge so saves from older versions backfill any new keys */
+function mergeState(base, saved){
+  const out = Object.assign({}, base, saved || {});
+  ["settings","topicStats","missed","seen","badges","levelBest"].forEach(k=>{
+    out[k] = Object.assign({}, base[k], (saved && saved[k]) || {});
+  });
+  if(!Array.isArray(out.lastSession)) out.lastSession = [];
+  if(typeof out.prefLength !== "number") out.prefLength = 10;
+  return out;
+}
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(!raw) return defaultState();
+    return mergeState(defaultState(), JSON.parse(raw));
+  }catch(e){ return defaultState(); }
+}
+function saveState(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){}
+}
+let state = loadState();
+
+/* ---- session (a single round) ---- */
+let session = null; // {level, mode, order:[qids], idx, correctCount, startedAt, params}
+let currentAnswered = false;
+let timerInterval = null;
+
+/* ---- navigation history ---- */
+let navStack = [];
+let currentScreen = null;
+
+/* ============================================================
+   Helpers
+   ============================================================ */
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+function questionsForLevel(lvl){ return Q.filter(q=>q.level===lvl); }
+function qById(id){ return Q.find(q=>q.id===id); }
+function topicAcc(t){ const s=state.topicStats[t]; return (s && s.total>0) ? s.correct/s.total : null; }
+function weakTopics(){ return TOPICS.filter(t=>{ const a=topicAcc(t); return a!==null && a<0.7; }); }
+/* move recently-seen ids to the back of a pool without dropping them */
+function deprioritize(pool, recentIds){
+  const recent = new Set(recentIds||[]);
+  const front=[], back=[];
+  pool.forEach(q=> (recent.has(q.id)?back:front).push(q));
+  return front.concat(back);
+}
+
+/* ============================================================
+   Session / question selection
+   ============================================================ */
+/*
+  Adaptive round formula (per level, N questions, N defaults to 10):
+    - Weakness half  (~N/2): currently-missed questions first, then questions
+                             from your weakest topics (accuracy under 70%).
+    - Fresh half     (~N/2): questions you have never seen in this level.
+    - Whichever half runs short is topped up from the other, then from
+      already-seen questions. Questions from the previous round are pushed
+      to the back so consecutive rounds do not repeat in the same order.
+    - The final list is shuffled, so weakness and fresh items interleave and
+      the starting question changes every round.
+*/
+function buildAdaptiveOrder(lvl, size){
+  const levelQs = questionsForLevel(lvl);
+  size = Math.max(1, Math.min(size, levelQs.length));
+  const weak = weakTopics();
+
+  let missedPool  = shuffle(levelQs.filter(q=> state.missed[q.id]));
+  let weakSeen    = shuffle(levelQs.filter(q=> !state.missed[q.id] && state.seen[q.id] && weak.includes(q.topic)));
+  let freshPool   = shuffle(levelQs.filter(q=> !state.seen[q.id]));
+  let seenRest    = shuffle(levelQs.filter(q=> state.seen[q.id] && !state.missed[q.id] && !weak.includes(q.topic)));
+
+  let weakness = deprioritize(missedPool.concat(weakSeen), state.lastSession);
+  freshPool    = deprioritize(freshPool, state.lastSession);
+  seenRest     = deprioritize(seenRest, state.lastSession);
+
+  const chosen = [], picked = new Set();
+  const take = (pool, n) => { while(n>0 && pool.length){ const q=pool.shift(); if(!picked.has(q.id)){ chosen.push(q); picked.add(q.id); n--; } } };
+
+  take(weakness, Math.round(size/2));      // weakness half
+  take(freshPool, size - chosen.length);   // fresh fills to target
+  take(weakness, size - chosen.length);    // leftover weakness
+  take(seenRest, size - chosen.length);    // then any other seen questions
+  if(chosen.length < size){                // tiny bank fallback: allow repeats
+    take(shuffle(levelQs.slice()), size - chosen.length);
+  }
+  return shuffle(chosen).map(q=>q.id);
+}
+function buildClassicOrder(lvl, size){
+  const levelQs = questionsForLevel(lvl);
+  size = Math.max(1, Math.min(size, levelQs.length));
+  let pool = deprioritize(shuffle(levelQs), state.lastSession);
+  return pool.slice(0, size).map(q=>q.id);
+}
+/* weakness drill: missed + weak-topic questions across ALL levels */
+function buildWeaknessDrill(size){
+  const weak = weakTopics();
+  let missedPool = shuffle(Q.filter(q=> state.missed[q.id]));
+  let weakSeen   = shuffle(Q.filter(q=> !state.missed[q.id] && state.seen[q.id] && weak.includes(q.topic)));
+  let pool = deprioritize(missedPool.concat(weakSeen), state.lastSession);
+  const seen=new Set(), out=[];
+  for(const q of pool){ if(out.length>=size) break; if(!seen.has(q.id)){ out.push(q); seen.add(q.id); } }
+  return out.map(q=>q.id);
+}
+
+function startSession(opts){
+  // opts: {level, mode:'adaptive'|'classic'|'weakness'|'review', size}
+  const size = opts.size || state.prefLength || 10;
+  let order = [];
+  let level = opts.level || 1;
+  if(opts.mode === "review"){
+    const missedQs = Q.filter(q=> state.missed[q.id]);
+    if(missedQs.length === 0) return false;
+    order = shuffle(missedQs).map(q=>q.id);
+    level = qById(order[0]).level;
+  } else if(opts.mode === "weakness"){
+    order = buildWeaknessDrill(size);
+    if(order.length === 0) return false;
+    level = qById(order[0]).level;
+  } else if(opts.mode === "classic"){
+    order = buildClassicOrder(level, size);
+  } else {
+    order = buildAdaptiveOrder(level, size);
+  }
+  session = {level, mode:opts.mode||"adaptive", order, idx:0, correctCount:0, startedAt:Date.now(), params:Object.assign({}, opts, {size})};
+  currentAnswered = false;
+  navigate("question");
+  renderQuestion();
+  return true;
+}
+
+function currentQ(){ return qById(session.order[session.idx]); }
+
+function renderMyelinTrack(){
+  const track = document.getElementById("myelinTrack");
+  track.innerHTML = "";
+  const total = session.order.length;
+  for(let i=0;i<total;i++){
+    const seg = document.createElement("div");
+    seg.className = "myelin-seg" + (i<session.idx ? " filled":"");
+    track.appendChild(seg);
+    if(i<total-1){
+      const node = document.createElement("div");
+      node.className = "myelin-seg node";
+      track.appendChild(node);
+    }
+  }
+}
+
+function dokLabel(lvl){ return lvl===1?"DOK 1 · Recall": lvl===2?"DOK 2 · Apply":"DOK 3 · Reason"; }
+function sourceLabel(mode){ return mode==="review"?"Review": mode==="weakness"?"Weak spots": mode==="classic"?"Shuffle":"Adaptive"; }
+
+function announce(msg){
+  const el = document.getElementById("srAnnounce");
+  el.textContent = "";
+  window.setTimeout(()=>{ el.textContent = msg; }, 30);
+}
+
+function renderQuestion(){
+  currentAnswered = false;
+  clearInterval(timerInterval);
+  const q = currentQ();
+  document.getElementById("qCounter").textContent = `Q ${session.idx+1} / ${session.order.length}`;
+  document.getElementById("qSourceTag").textContent = sourceLabel(session.mode);
+  document.getElementById("qTopicTag").textContent = q.topic;
+  document.getElementById("qDokTag").textContent = dokLabel(q.level);
+  document.getElementById("qText").textContent = q.q;
+  renderMyelinTrack();
+
+  const order = shuffle(q.choices.map((c,i)=>i));
+  const choicesEl = document.getElementById("qChoices");
+  choicesEl.innerHTML = "";
+  const letters = ["A","B","C","D"];
+  order.forEach((origIdx, pos)=>{
+    const btn = document.createElement("button");
+    btn.className = "choice";
+    btn.type = "button";
+    btn.dataset.idx = origIdx;                 // fix: identify choice by index, not text
+    btn.innerHTML = `<span class="letter" aria-hidden="true">${letters[pos]}.</span><span>${q.choices[origIdx]}</span>`;
+    btn.addEventListener("click", ()=>selectAnswer(origIdx, q));
+    choicesEl.appendChild(btn);
+  });
+
+  const panel = document.getElementById("explainPanel");
+  panel.classList.remove("show");
+  panel.innerHTML = "";
+  document.getElementById("btnNext").classList.add("hidden");
+
+  const timerWrap = document.getElementById("timerWrap");
+  if(state.settings.timer || state.settings.challenge){
+    timerWrap.classList.remove("hidden");
+    let timeLeft = 30;
+    const bar = document.getElementById("timerBar");
+    bar.style.width = "100%";
+    timerInterval = setInterval(()=>{
+      timeLeft -= 1;
+      bar.style.width = Math.max(0,(timeLeft/30*100))+"%";
+      if(timeLeft<=0){
+        clearInterval(timerInterval);
+        if(!currentAnswered) selectAnswer(-1, q);
+      }
+    },1000);
+  } else {
+    timerWrap.classList.add("hidden");
+  }
+  // move focus to the question text so screen readers read the new question
+  document.getElementById("qText").focus();
+}
+
+function selectAnswer(chosenIdx, q){
+  if(currentAnswered) return;
+  currentAnswered = true;
+  clearInterval(timerInterval);
+  const correct = chosenIdx === q.correct;
+  const allBtns = document.querySelectorAll("#qChoices .choice");
+  allBtns.forEach(b=>{
+    b.classList.add("locked");
+    b.disabled = true;
+    const idx = parseInt(b.dataset.idx, 10);   // fix: match by index
+    if(idx === q.correct){ b.classList.add("correct"); b.setAttribute("aria-label", "Correct answer: " + q.choices[idx]); }
+    else if(chosenIdx !== -1 && idx === chosenIdx){ b.classList.add("incorrect"); b.setAttribute("aria-label", "Your answer, incorrect: " + q.choices[idx]); }
+    else b.classList.add("dim");
+  });
+
+  state.seen[q.id] = true;
+  state.totalAnswered++;
+  if(!state.topicStats[q.topic]) state.topicStats[q.topic] = {correct:0, total:0};
+  state.topicStats[q.topic].total++;
+
+  let announceMsg;
+  if(correct){
+    session.correctCount++;
+    state.totalCorrect++;
+    state.streak++;
+    state.longestStreak = Math.max(state.longestStreak, state.streak);
+    state.topicStats[q.topic].correct++;
+    const xpGain = q.level===1?10:q.level===2?15:20;
+    const bonus = state.settings.challenge ? Math.round(xpGain*0.5) : 0;
+    state.xp += xpGain + bonus;
+    session.xpEarned = (session.xpEarned||0) + xpGain + bonus;
+    delete state.missed[q.id];
+    floatXP("+"+(xpGain+bonus)+" XP"+(bonus?" (challenge bonus)":""));
+    playSound(true);
+    announceMsg = `Correct. Plus ${xpGain+bonus} XP.`;
+  } else {
+    state.streak = 0;
+    state.missed[q.id] = true;
+    playSound(false);
+    announceMsg = (chosenIdx === -1 ? "Time up. " : "Incorrect. ") + "Correct answer: " + q.choices[q.correct] + ".";
+  }
+  saveState();
+  renderExplanation(q, correct, chosenIdx);
+  const nextBtn = document.getElementById("btnNext");
+  nextBtn.classList.remove("hidden");
+  nextBtn.textContent = (session.idx+1 >= session.order.length) ? "See results →" : "Next question →";
+  updateHomeStatbar();
+  announce(announceMsg + " Select Next to continue.");
+}
+
+function renderExplanation(q, correct, chosenIdx){
+  const panel = document.getElementById("explainPanel");
+  const hideDetail = state.settings.challenge; // challenge mode withholds detail until the round ends
+  let html = "";
+  html += `<h4>Correct answer</h4><p>${q.choices[q.correct]}</p>`;
+  if(!hideDetail){
+    html += `<h4>Why it's correct</h4><p>${q.why}</p>`;
+    html += `<h4>Why the others are wrong</h4>`;
+    q.choices.forEach((c,i)=>{
+      if(i!==q.correct) html += `<p class="wrongwhy"><b>${c}:</b> ${q.wrongs[i]}</p>`;
+    });
+    if(q.trick){ html += `<div class="tip"><h4>High-yield / memory tip</h4><p>${q.trick}</p></div>`; }
+    if(q.clinical){ html += `<div class="tip"><h4>Clinical relevance</h4><p>${q.clinical}</p></div>`; }
+  } else {
+    html += `<p class="muted">Challenge mode. Full explanation is in the round summary.</p>`;
+  }
+  panel.innerHTML = html;
+  panel.classList.add("show");
+  if(!session.reviewLog) session.reviewLog = [];
+  session.reviewLog.push({q, correct, chosenIdx});
+}
+
+function floatXP(text){
+  const el = document.createElement("div");
+  el.className = "xpchip";
+  el.textContent = text;
+  document.getElementById("xpfloat").appendChild(el);
+  setTimeout(()=>el.remove(), 1400);
+}
+
+function playSound(good){
+  if(!state.settings.sound) return;
+  try{
+    const ctx = playSound._ctx || (playSound._ctx = new (window.AudioContext||window.webkitAudioContext)());
+    const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.frequency.value = good ? 880 : 220;
+    g.gain.value = 0.05;
+    o.start(); o.stop(ctx.currentTime+0.15);
+  }catch(e){}
+}
+
+document.getElementById("btnNext").addEventListener("click", ()=>{
+  session.idx++;
+  if(session.idx >= session.order.length){
+    finishLevel();
+  } else {
+    renderQuestion();
+  }
+});
+
+function finishLevel(){
+  const total = session.order.length;
+  const acc = Math.round((session.correctCount/total)*100);
+  // level best only counts a full-level classic/adaptive run, not short drills or reviews
+  if(session.mode === "adaptive" || session.mode === "classic"){
+    state.levelBest[session.level] = Math.max(state.levelBest[session.level]||0, acc);
+    checkBadges(session.level, acc);
+  }
+  state.lastSession = session.order.slice();
+  saveState();
+
+  document.getElementById("completeSummary").textContent =
+    `${sourceLabel(session.mode)} · ${dokLabel(session.level)} · ${session.correctCount} / ${total} correct (${acc}%)`;
+  document.getElementById("completeStats").innerHTML = `
+    <div class="statbox"><div class="num">${acc}%</div><div class="lbl">Accuracy</div></div>
+    <div class="statbox"><div class="num">${session.correctCount}/${total}</div><div class="lbl">Correct</div></div>
+    <div class="statbox"><div class="num">+${session.xpEarned||0}</div><div class="lbl">XP earned</div></div>
+    <div class="statbox"><div class="num">${state.xp}</div><div class="lbl">Total XP</div></div>
+  `;
+  renderRoundReview();
+  navigate("complete");
+  if(acc>=70) launchConfetti();
+}
+
+/* full explanations for the round, always available, and the fix for the
+   challenge-mode promise that detail is "available in the round summary" */
+function renderRoundReview(){
+  const body = document.getElementById("completeReviewBody");
+  const log = session.reviewLog || [];
+  const details = document.getElementById("completeReview");
+  if(log.length === 0){ details.classList.add("hidden"); return; }
+  details.classList.remove("hidden");
+  details.open = state.settings.challenge; // auto-open when detail was withheld during play
+  let html = "";
+  log.forEach((item, n)=>{
+    const q = item.q;
+    html += `<div class="logitem">`;
+    html += `<div class="lstate ${item.correct?"ok":"no"}">${item.correct?"Correct":"Missed"} · Q${n+1} · ${q.topic}</div>`;
+    html += `<div class="lq">${q.q}</div>`;
+    html += `<div class="lans">Answer: ${q.choices[q.correct]}</div>`;
+    html += `<div class="lwhy">${q.why}</div>`;
+    if(q.trick) html += `<div class="lwhy"><b>Tip:</b> ${q.trick}</div>`;
+    if(q.clinical) html += `<div class="lwhy"><b>Clinical:</b> ${q.clinical}</div>`;
+    html += `</div>`;
+  });
+  body.innerHTML = html;
+}
+
+function checkBadges(level, acc){
+  if(acc>=60){
+    if(level===1) state.badges.brain_explorer = true;
+    if(level===2) state.badges.neural_navigator = true;
+    if(level===3) state.badges.anatomy_master = true;
+    if(state.badges.brain_explorer && state.badges.neural_navigator && state.badges.anatomy_master){
+      state.badges.professor_slayer = true;
+    }
+  }
+}
+
+function launchConfetti(){
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const colors = ["#49e0d8","#f5a623","#5fe6a0","#ff6b7a"];
+  const wrap = document.getElementById("confetti");
+  for(let i=0;i<60;i++){
+    const c = document.createElement("div");
+    c.className = "confetto";
+    c.style.left = Math.random()*100+"vw";
+    c.style.background = colors[Math.floor(Math.random()*colors.length)];
+    c.style.animationDuration = (2+Math.random()*1.5)+"s";
+    c.style.animationDelay = (Math.random()*0.4)+"s";
+    wrap.appendChild(c);
+    setTimeout(()=>c.remove(), 4000);
+  }
+}
+
+/* ============================================================
+   Screen navigation
+   ============================================================ */
+function showScreen(name){
+  clearInterval(timerInterval); // fix: stop any running timer when leaving a question
+  document.querySelectorAll(".screen").forEach(s=>s.classList.add("hidden"));
+  const el = document.getElementById("screen-"+name);
+  el.classList.remove("hidden");
+  if(name==="home") updateHomeStatbar();
+  if(name==="levels") renderLevelDetail(currentLevelTab);
+  if(name==="stats") renderStats();
+  if(name==="review") renderReview();
+  if(name==="settings") renderSettings();
+  if(name==="badges") renderBadges();
+  if(name!=="question"){
+    const h = el.querySelector("h1,h2");
+    if(h){ h.setAttribute("tabindex","-1"); h.focus(); }
+    else el.focus();
+  }
+}
+function navigate(name){
+  if(currentScreen && currentScreen !== name) navStack.push(currentScreen);
+  currentScreen = name;
+  showScreen(name);
+}
+function goBack(){
+  if(navStack.length){ currentScreen = navStack.pop(); showScreen(currentScreen); }
+  else { currentScreen = "home"; showScreen("home"); }
+}
+function goHome(){ navStack = []; currentScreen = "home"; showScreen("home"); }
+
+document.getElementById("btnHome").addEventListener("click", goHome);
+document.getElementById("btnBack").addEventListener("click", goBack);
+document.getElementById("btnRestart").addEventListener("click", ()=>{
+  if(session && session.params) startSession(session.params);
+});
+document.getElementById("btnMute").addEventListener("click", (e)=>{
+  state.settings.sound = !state.settings.sound; saveState();
+  const on = state.settings.sound;
+  const btn = e.currentTarget;
+  btn.textContent = on ? "🔊" : "🔇";
+  btn.setAttribute("aria-pressed", on ? "true":"false");
+  btn.setAttribute("aria-label", on ? "Sound effects on" : "Sound effects off");
+  if(currentScreen==="settings") renderSettings();
+});
+
+document.querySelectorAll(".menu-card").forEach(card=>{
+  card.addEventListener("click", ()=>{
+    const go = card.dataset.go;
+    if(go==="play"){ startSession({level:currentLevelTab, mode: state.settings.adaptive ? "adaptive":"classic", size: state.prefLength}); }
+    else navigate(go);
+  });
+});
+
+/* ============================================================
+   Level select
+   ============================================================ */
+let currentLevelTab = 1;
+document.querySelectorAll(".leveltab").forEach(tab=>{
+  tab.addEventListener("click", ()=>{
+    currentLevelTab = parseInt(tab.dataset.lvl, 10);
+    renderLevelDetail(currentLevelTab);
+  });
+});
+
+function renderLevelDetail(lvl){
+  document.querySelectorAll(".leveltab").forEach(t=>{
+    const on = parseInt(t.dataset.lvl,10)===lvl;
+    t.classList.toggle("active", on);
+    t.setAttribute("aria-selected", on ? "true":"false");
+  });
+  const count = questionsForLevel(lvl).length;
+  const best = state.levelBest[lvl]||0;
+  const detail = document.getElementById("levelDetail");
+  const dokDesc = lvl===1
+    ? "Straightforward recall and vocabulary. No trick wording, no fluff."
+    : lvl===2
+    ? "Clinical scenarios with extra detail. Learn to find the one clue that matters."
+    : "Professor-style reasoning: long clinical stems, several structures, heavy fluff.";
+  const lengths = [10, 20, "All"];
+  const segBtns = lengths.map(n=>{
+    const val = (n==="All") ? count : n;
+    const on = (state.prefLength >= count && n==="All") || (state.prefLength === n && !(state.prefLength>=count && n!=="All"));
+    return `<button type="button" data-len="${val}" class="${state.prefLength===val || (n==="All" && state.prefLength>=count) ? "on":""}">${n}</button>`;
+  }).join("");
+  detail.innerHTML = `
+    <p class="muted" style="margin-top:14px;">${dokDesc}</p>
+    <p class="muted" style="margin-top:8px; font-size:0.85rem;">${state.settings.adaptive ? "Adaptive mix is on: each round blends fresh questions with your weak spots, in a fresh random order." : "Adaptive mix is off: straight random shuffle of the level."}</p>
+    <div class="statbar">
+      <div class="pill">Questions available: <b>${count}</b></div>
+      <div class="pill">Best accuracy: <b>${best}%</b></div>
+    </div>
+    <div class="fieldlbl">Questions per round</div>
+    <div class="seg" id="lenSeg" role="group" aria-label="Questions per round">${segBtns}</div>
+    <div class="actionrow">
+      <button class="btn primary" id="btnStartLvl" type="button">Start round</button>
+    </div>
+  `;
+  detail.querySelectorAll("#lenSeg button").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      state.prefLength = parseInt(b.dataset.len,10);
+      saveState();
+      renderLevelDetail(lvl);
+    });
+  });
+  document.getElementById("btnStartLvl").addEventListener("click", ()=>{
+    startSession({level:lvl, mode: state.settings.adaptive ? "adaptive":"classic", size: state.prefLength});
+  });
+}
+
+/* ============================================================
+   Stats + weakness dashboard
+   ============================================================ */
+function updateHomeStatbar(){
+  const el = document.getElementById("homeStatbar");
+  const acc = state.totalAnswered ? Math.round((state.totalCorrect/state.totalAnswered)*100) : 0;
+  el.innerHTML = `
+    <div class="pill">XP <b>${state.xp}</b></div>
+    <div class="pill streak">Streak <b>${state.streak}</b></div>
+    <div class="pill">Accuracy <b>${acc}%</b></div>
+    <div class="pill">Answered <b>${state.totalAnswered}</b></div>
+  `;
+}
+
+function renderStats(){
+  const acc = state.totalAnswered ? Math.round((state.totalCorrect/state.totalAnswered)*100) : 0;
+  document.getElementById("statGrid").innerHTML = `
+    <div class="statbox"><div class="num">${state.totalAnswered}</div><div class="lbl">Questions answered</div></div>
+    <div class="statbox"><div class="num">${acc}%</div><div class="lbl">Accuracy</div></div>
+    <div class="statbox"><div class="num">${state.streak}</div><div class="lbl">Current streak</div></div>
+    <div class="statbox"><div class="num">${state.longestStreak}</div><div class="lbl">Longest streak</div></div>
+    <div class="statbox"><div class="num">${state.xp}</div><div class="lbl">Total XP</div></div>
+    <div class="statbox"><div class="num">${Object.keys(state.missed).length}</div><div class="lbl">Questions to review</div></div>
+  `;
+
+  // weakness dashboard summary
+  const weak = weakTopics();
+  const missedCount = Object.keys(state.missed).length;
+  const summary = document.getElementById("weaknessSummary");
+  const drillBtn = document.getElementById("btnDrillWeak");
+  if(missedCount === 0 && weak.length === 0){
+    summary.textContent = state.totalAnswered ? "No weak spots yet. Nice work. Keep playing to keep it that way." : "Play a round first and your weak topics will show up here.";
+    drillBtn.disabled = true;
+  } else {
+    const parts = [];
+    if(missedCount) parts.push(`${missedCount} question${missedCount===1?"":"s"} to remaster`);
+    if(weak.length) parts.push(`${weak.length} weak topic${weak.length===1?"":"s"} (under 70%): ${weak.join(", ")}`);
+    summary.textContent = parts.join(". ") + ". A drill pulls these first.";
+    drillBtn.disabled = false;
+  }
+
+  // per-topic mastery, weakest first
+  const list = document.getElementById("topicList");
+  list.innerHTML = "";
+  const rows = TOPICS.map(t=>{
+    const s = state.topicStats[t] || {correct:0,total:0};
+    const pct = s.total ? Math.round((s.correct/s.total)*100) : null;
+    return {t, s, pct};
+  }).sort((a,b)=>{
+    if(a.pct===null && b.pct===null) return 0;
+    if(a.pct===null) return 1;           // unattempted at the bottom
+    if(b.pct===null) return -1;
+    return a.pct-b.pct;                    // weakest first
+  });
+  rows.forEach(({t,s,pct})=>{
+    const shown = pct===null ? 0 : pct;
+    const color = pct===null ? "var(--line)" : pct>=80?"var(--correct)":pct>=50?"var(--dendrite)":"var(--incorrect)";
+    const weakTag = (pct!==null && pct<70) ? `<span class="weakflag">weak spot</span>` : "";
+    const row = document.createElement("div");
+    row.className = "topicrow";
+    row.innerHTML = `<div class="tname">${t}${weakTag}</div><div class="topicbar"><div class="topicbar-fill" style="width:${shown}%; background:${color};"></div></div><div class="tpct">${pct===null?", ":pct+"%"}</div>`;
+    list.appendChild(row);
+  });
+}
+document.getElementById("btnDrillWeak").addEventListener("click", ()=>{
+  startSession({mode:"weakness", size: state.prefLength});
+});
+
+/* ============================================================
+   Review
+   ============================================================ */
+function renderReview(){
+  const missedCount = Object.keys(state.missed).length;
+  document.getElementById("reviewSummary").textContent = missedCount
+    ? `You have ${missedCount} missed question${missedCount===1?"":"s"} across all levels. Replay them until they are mastered.`
+    : `No missed questions right now. Play a round to build your review deck.`;
+  document.getElementById("btnStartReview").disabled = missedCount===0;
+}
+document.getElementById("btnStartReview").addEventListener("click", ()=>{
+  startSession({mode:"review"});
+});
+
+/* ============================================================
+   Settings
+   ============================================================ */
+function renderSettings(){
+  setSwitch("toggleAdaptive", state.settings.adaptive);
+  setSwitch("toggleStudy", state.settings.study);
+  setSwitch("toggleChallenge", state.settings.challenge);
+  setSwitch("toggleTimer", state.settings.timer);
+  setSwitch("toggleSound", state.settings.sound);
+}
+function setSwitch(id, on){
+  const el = document.getElementById(id);
+  el.classList.toggle("on", !!on);
+  el.setAttribute("aria-checked", on ? "true":"false");
+}
+document.getElementById("toggleAdaptive").addEventListener("click", ()=>{
+  state.settings.adaptive = !state.settings.adaptive;
+  saveState(); renderSettings();
+});
+document.getElementById("toggleStudy").addEventListener("click", ()=>{
+  state.settings.study = !state.settings.study;
+  if(state.settings.study) state.settings.challenge = false;
+  saveState(); renderSettings();
+});
+document.getElementById("toggleChallenge").addEventListener("click", ()=>{
+  state.settings.challenge = !state.settings.challenge;
+  if(state.settings.challenge){ state.settings.study=false; state.settings.timer=true; }
+  saveState(); renderSettings();
+});
+document.getElementById("toggleTimer").addEventListener("click", ()=>{
+  state.settings.timer = !state.settings.timer;
+  saveState(); renderSettings();
+});
+document.getElementById("toggleSound").addEventListener("click", ()=>{
+  state.settings.sound = !state.settings.sound;
+  saveState(); renderSettings();
+  const on = state.settings.sound;
+  const mute = document.getElementById("btnMute");
+  mute.textContent = on ? "🔊" : "🔇";
+  mute.setAttribute("aria-pressed", on ? "true":"false");
+  mute.setAttribute("aria-label", on ? "Sound effects on" : "Sound effects off");
+});
+document.getElementById("btnResetProgress").addEventListener("click", ()=>{
+  if(confirm("Reset all XP, streaks, and mastery data? This can't be undone.")){
+    state = defaultState();
+    saveState();
+    goHome();
+  }
+});
+
+/* ============================================================
+   Badges
+   ============================================================ */
+function renderBadges(){
+  const defs = [
+    {key:"brain_explorer", icon:"🧠", name:"Brain Explorer", desc:"Score 60%+ on a full Level 1 round"},
+    {key:"neural_navigator", icon:"⚡", name:"Neural Navigator", desc:"Score 60%+ on a full Level 2 round"},
+    {key:"anatomy_master", icon:"🏆", name:"Anatomy Master", desc:"Score 60%+ on a full Level 3 round"},
+    {key:"professor_slayer", icon:"👑", name:"Professor Slayer", desc:"Earn all three above"},
+  ];
+  const grid = document.getElementById("badgeGrid");
+  grid.innerHTML = "";
+  defs.forEach(d=>{
+    const earned = state.badges[d.key];
+    const el = document.createElement("div");
+    el.className = "badge" + (earned?" earned":"");
+    el.innerHTML = `<div class="bicon" aria-hidden="true">${d.icon}</div><div class="bname">${d.name}${earned?" (earned)":""}</div>`;
+    el.title = d.desc;
+    grid.appendChild(el);
+  });
+}
+
+/* ============================================================
+   Complete screen actions
+   ============================================================ */
+document.getElementById("btnPlayAgain").addEventListener("click", ()=>{
+  if(session && session.params) startSession(session.params);
+});
+document.getElementById("btnToHomeFromComplete").addEventListener("click", goHome);
+
+/* ============================================================
+   Ambient neuron network background (signature visual element)
+   ============================================================ */
+(function(){
+  const canvas = document.getElementById("netbg");
+  const ctx = canvas.getContext("2d");
+  let w,h,nodes;
+  function resize(){
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+  }
+  window.addEventListener("resize", resize);
+  resize();
+  const N = Math.min(70, Math.floor((w*h)/22000));
+  nodes = Array.from({length:N}, ()=>({
+    x:Math.random()*w, y:Math.random()*h,
+    vx:(Math.random()-0.5)*0.25, vy:(Math.random()-0.5)*0.25,
+    r:Math.random()*1.5+0.5
+  }));
+  let pulses = [];
+  function spawnPulse(){
+    if(nodes.length<2) return;
+    const a = nodes[Math.floor(Math.random()*nodes.length)];
+    const b = nodes[Math.floor(Math.random()*nodes.length)];
+    pulses.push({a,b,t:0});
+  }
+
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function drawStatic(){
+    ctx.clearRect(0,0,w,h);
+    ctx.strokeStyle = "rgba(73,224,216,0.08)";
+    ctx.lineWidth = 1;
+    for(let i=0;i<nodes.length;i++){
+      for(let j=i+1;j<nodes.length;j++){
+        const dx=nodes[i].x-nodes[j].x, dy=nodes[i].y-nodes[j].y;
+        const d = Math.sqrt(dx*dx+dy*dy);
+        if(d<140){
+          ctx.globalAlpha = 1-(d/140);
+          ctx.beginPath(); ctx.moveTo(nodes[i].x,nodes[i].y); ctx.lineTo(nodes[j].x,nodes[j].y); ctx.stroke();
+        }
+      }
+    }
+    ctx.globalAlpha = 1;
+    nodes.forEach(n=>{
+      ctx.beginPath();
+      ctx.fillStyle = "rgba(73,224,216,0.5)";
+      ctx.arc(n.x,n.y,n.r,0,Math.PI*2);
+      ctx.fill();
+    });
+  }
+
+  function frame(){
+    ctx.clearRect(0,0,w,h);
+    ctx.strokeStyle = "rgba(73,224,216,0.08)";
+    ctx.lineWidth = 1;
+    for(let i=0;i<nodes.length;i++){
+      for(let j=i+1;j<nodes.length;j++){
+        const dx=nodes[i].x-nodes[j].x, dy=nodes[i].y-nodes[j].y;
+        const d = Math.sqrt(dx*dx+dy*dy);
+        if(d<140){
+          ctx.globalAlpha = 1-(d/140);
+          ctx.beginPath(); ctx.moveTo(nodes[i].x,nodes[i].y); ctx.lineTo(nodes[j].x,nodes[j].y); ctx.stroke();
+        }
+      }
+    }
+    ctx.globalAlpha = 1;
+    nodes.forEach(n=>{
+      n.x+=n.vx; n.y+=n.vy;
+      if(n.x<0||n.x>w) n.vx*=-1;
+      if(n.y<0||n.y>h) n.vy*=-1;
+      ctx.beginPath();
+      ctx.fillStyle = "rgba(73,224,216,0.5)";
+      ctx.arc(n.x,n.y,n.r,0,Math.PI*2);
+      ctx.fill();
+    });
+    pulses.forEach(p=>{
+      p.t += 0.03;
+      const x = p.a.x + (p.b.x-p.a.x)*Math.min(p.t,1);
+      const y = p.a.y + (p.b.y-p.a.y)*Math.min(p.t,1);
+      ctx.beginPath();
+      ctx.fillStyle = "rgba(245,166,35,0.9)";
+      ctx.arc(x,y,2.4,0,Math.PI*2);
+      ctx.fill();
+    });
+    pulses = pulses.filter(p=>p.t<1);
+    requestAnimationFrame(frame);
+  }
+
+  if(reduced){
+    drawStatic();               // fix: one static frame, no animation loop or pulse spawner
+  } else {
+    setInterval(spawnPulse, 700);
+    frame();
+  }
+})();
+
+/* ============================================================
+   Kajabi / iframe height-sender (per workspace HTML standard)
+   ============================================================ */
+(function(){
+  function sendHeight(){
+    try{
+      var hgt = document.documentElement.scrollHeight;
+      if(window.parent && window.parent !== window){
+        window.parent.postMessage({type:"neuroquest-resize", id:"neuroquest", height:hgt}, "*");
+      }
+    }catch(e){}
+  }
+  window.addEventListener("load", sendHeight);
+  window.addEventListener("resize", sendHeight);
+  if(window.ResizeObserver){ new ResizeObserver(sendHeight).observe(document.body); }
+})();
+
+/* ============================================================
+   Init
+   ============================================================ */
+(function initMuteBtn(){
+  const on = state.settings.sound;
+  const mute = document.getElementById("btnMute");
+  mute.textContent = on ? "🔊" : "🔇";
+  mute.setAttribute("aria-pressed", on ? "true":"false");
+  mute.setAttribute("aria-label", on ? "Sound effects on" : "Sound effects off");
+})();
+updateHomeStatbar();
+goHome();
+</script>
+</body>
+</html>
